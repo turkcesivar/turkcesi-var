@@ -4,7 +4,7 @@
  "dil": "tr",
  "oyunSurumu": "64af06864e2027ca6f406be296b3793cbf239278d3fb23e4b6a00670c13f8fe1",
  "model": "",
- "tarih": "2026-11-18T21:15:33.596Z",
+ "tarih": "2026-11-18T23:28:56.891Z",
  "cevirenler": [
   "Türkçesi Var"
  ],
@@ -247114,7 +247114,7 @@
    ]
   },
   "ST_NeroUI_Texts::MainMenu_Action_Options": {
-   "tr": "SEÇENEKLER",
+   "tr": "SEÇENEKLER - TÜRKÇESİ VAR",
    "kaynakOzeti": "d0b1a869600d2107",
    "ue": [
     1794465891,
@@ -249040,7 +249040,7 @@
    ]
   },
   "ST_NeroUI_Texts::SplashScreen_PressToStart": {
-   "tr": "HERHANGİ BİR TUŞA BASIN - TÜRKÇE: TÜRKÇESİ VAR",
+   "tr": "HERHANGİ BİR TUŞA BASIN",
    "kaynakOzeti": "cd656a5505bed5cd",
    "ue": [
     1794465891,
@@ -249049,7 +249049,7 @@
    ]
   },
   "ST_NeroUI_Texts::SplashScreen_PressToStart_PS": {
-   "tr": "HERHANGİ BİR TUŞA BASIN - TÜRKÇE: TÜRKÇESİ VAR",
+   "tr": "HERHANGİ BİR TUŞA BASIN",
    "kaynakOzeti": "cd656a5505bed5cd",
    "ue": [
     1794465891,
@@ -249058,7 +249058,7 @@
    ]
   },
   "ST_NeroUI_Texts::SplashScreen_PressToStart_XBOX": {
-   "tr": "HERHANGİ BİR TUŞA BASIN - TÜRKÇE: TÜRKÇESİ VAR",
+   "tr": "HERHANGİ BİR TUŞA BASIN",
    "kaynakOzeti": "cd656a5505bed5cd",
    "ue": [
     1794465891,

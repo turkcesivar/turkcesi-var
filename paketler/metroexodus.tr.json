@@ -4,7 +4,7 @@
  "dil": "tr",
  "oyunSurumu": "a2b99519c6ab64ae4ef55d968bf04cf6f7d38c2b645dace1eb030cc2e34eae4a",
  "model": "",
- "tarih": "2026-11-16T23:30:09.654Z",
+ "tarih": "2026-11-18T23:29:02.518Z",
  "cevirenler": [
   "Türkçesi Var"
  ],
@@ -10322,7 +10322,7 @@
    "kaynakOzeti": "e8a01133b1351e5f"
   },
   "$options": {
-   "tr": "SEÇENEKLER",
+   "tr": "SEÇENEKLER - TÜRKÇESİ VAR",
    "kaynakOzeti": "d0b1a869600d2107"
   },
   "$overwrite_checkpoint_message": {
@@ -10734,7 +10734,7 @@
    "kaynakOzeti": "f6635cc81d13c17d"
   },
   "$preferences": {
-   "tr": "SEÇENEKLER",
+   "tr": "SEÇENEKLER - TÜRKÇESİ VAR",
    "kaynakOzeti": "d0b1a869600d2107"
   },
   "$press_a_button_to_continue": {
