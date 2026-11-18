@@ -4,7 +4,7 @@
  "dil": "tr",
  "oyunSurumu": "64af06864e2027ca6f406be296b3793cbf239278d3fb23e4b6a00670c13f8fe1",
  "model": "",
- "tarih": "2026-11-18T23:28:56.891Z",
+ "tarih": "2026-11-18T23:57:13.810Z",
  "cevirenler": [
   "Türkçesi Var"
  ],
@@ -247114,7 +247114,7 @@
    ]
   },
   "ST_NeroUI_Texts::MainMenu_Action_Options": {
-   "tr": "SEÇENEKLER - TÜRKÇESİ VAR",
+   "tr": "SEÇENEKLER",
    "kaynakOzeti": "d0b1a869600d2107",
    "ue": [
     1794465891,
@@ -249040,7 +249040,7 @@
    ]
   },
   "ST_NeroUI_Texts::SplashScreen_PressToStart": {
-   "tr": "HERHANGİ BİR TUŞA BASIN",
+   "tr": "HERHANGİ BİR TUŞA BASIN - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "cd656a5505bed5cd",
    "ue": [
     1794465891,
@@ -249049,7 +249049,7 @@
    ]
   },
   "ST_NeroUI_Texts::SplashScreen_PressToStart_PS": {
-   "tr": "HERHANGİ BİR TUŞA BASIN",
+   "tr": "HERHANGİ BİR TUŞA BASIN - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "cd656a5505bed5cd",
    "ue": [
     1794465891,
@@ -249058,7 +249058,7 @@
    ]
   },
   "ST_NeroUI_Texts::SplashScreen_PressToStart_XBOX": {
-   "tr": "HERHANGİ BİR TUŞA BASIN",
+   "tr": "HERHANGİ BİR TUŞA BASIN - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "cd656a5505bed5cd",
    "ue": [
     1794465891,
