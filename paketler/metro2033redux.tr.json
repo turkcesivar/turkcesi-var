@@ -4,7 +4,7 @@
  "dil": "tr",
  "oyunSurumu": "02da3140038e10705252538240b54d10a8c1a79a7778a4b10e564a7f695a78f8",
  "model": "",
- "tarih": "2026-11-18T23:49:26.819Z",
+ "tarih": "2026-11-19T00:07:29.313Z",
  "cevirenler": [
   "Türkçesi Var"
  ],
@@ -14726,11 +14726,11 @@
    "kaynakOzeti": "d0b1a869600d2107"
   },
   "$press_a_button_to_continue": {
-   "tr": "DEVAM ETMEK İÇİN <xpad_a> TUŞUNA BAS - TÜRKÇESİ VAR",
+   "tr": "DEVAM ETMEK İÇİN <xpad_a> TUŞUNA BAS - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "187e2f5467a82276"
   },
   "$press_any_key_to_continue": {
-   "tr": "DEVAM ETMEK İÇİN BİR TUŞA BAS - TÜRKÇESİ VAR",
+   "tr": "DEVAM ETMEK İÇİN BİR TUŞA BAS - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "a6e6e289c26defba"
   },
   "$press_key_control": {
@@ -14742,7 +14742,7 @@
    "kaynakOzeti": "3cfbb4c3f09bbd7a"
   },
   "$press_start_button_to_continue": {
-   "tr": "DEVAM ETMEK İÇİN <start> TUŞUNA BAS - TÜRKÇESİ VAR",
+   "tr": "DEVAM ETMEK İÇİN <start> TUŞUNA BAS - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "ec46353abd7d28f0"
   },
   "$prev": {

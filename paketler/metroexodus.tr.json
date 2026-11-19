@@ -4,7 +4,7 @@
  "dil": "tr",
  "oyunSurumu": "a2b99519c6ab64ae4ef55d968bf04cf6f7d38c2b645dace1eb030cc2e34eae4a",
  "model": "",
- "tarih": "2026-11-18T23:49:30.514Z",
+ "tarih": "2026-11-19T00:07:32.826Z",
  "cevirenler": [
   "Türkçesi Var"
  ],
@@ -214,7 +214,7 @@
    "kaynakOzeti": "c05140f69120f2ce"
   },
   "$build_version": {
-   "tr": "<build_version>",
+   "tr": "<build_version> - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "64c20a653179391c"
   },
   "$buy": {
@@ -10738,19 +10738,19 @@
    "kaynakOzeti": "d0b1a869600d2107"
   },
   "$press_a_button_to_continue": {
-   "tr": "DEVAM ETMEK İÇİN <xpad_a> TUŞUNA BASIN - TÜRKÇESİ VAR",
+   "tr": "DEVAM ETMEK İÇİN <xpad_a> TUŞUNA BASIN - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "187e2f5467a82276"
   },
   "$press_any_key_to_continue": {
-   "tr": "DEVAM ETMEK İÇİN BİR TUŞA BAS - TÜRKÇESİ VAR",
+   "tr": "DEVAM ETMEK İÇİN BİR TUŞA BAS - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "a6e6e289c26defba"
   },
   "$press_any_key_to_continue_xbox": {
-   "tr": "DEVAM ETMEK İÇİN <xpad_a> TUŞUNA BASIN - TÜRKÇESİ VAR",
+   "tr": "DEVAM ETMEK İÇİN <xpad_a> TUŞUNA BASIN - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "187e2f5467a82276"
   },
   "$press_start_button_to_continue": {
-   "tr": "DEVAM ETMEK İÇİN <start> TUŞUNA BASIN - TÜRKÇESİ VAR",
+   "tr": "DEVAM ETMEK İÇİN <start> TUŞUNA BASIN - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "ec46353abd7d28f0"
   },
   "$pt": {
