@@ -4,7 +4,7 @@
  "dil": "tr",
  "oyunSurumu": "a2b99519c6ab64ae4ef55d968bf04cf6f7d38c2b645dace1eb030cc2e34eae4a",
  "model": "",
- "tarih": "2026-11-19T00:07:32.826Z",
+ "tarih": "2026-11-19T00:10:21.409Z",
  "cevirenler": [
   "Türkçesi Var"
  ],
@@ -214,7 +214,7 @@
    "kaynakOzeti": "c05140f69120f2ce"
   },
   "$build_version": {
-   "tr": "<build_version> - TÜRKÇESİ VAR SUNAR",
+   "tr": "<build_version>",
    "kaynakOzeti": "64c20a653179391c"
   },
   "$buy": {
@@ -10134,7 +10134,7 @@
    "kaynakOzeti": "d438686e54df812d"
   },
   "$loading": {
-   "tr": "YÜKLENİYOR...",
+   "tr": "YÜKLENİYOR... - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "b6dcb96448c66497"
   },
   "$loading_profile_data": {
@@ -10146,7 +10146,7 @@
    "kaynakOzeti": "6bc666d687a67fe5"
   },
   "$loading_progress": {
-   "tr": "YÜKLENİYOR...<load_progress>%",
+   "tr": "YÜKLENİYOR...<load_progress>% - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "61737476c950dbce"
   },
   "$localizable_signs": {
