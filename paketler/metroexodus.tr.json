@@ -4,7 +4,7 @@
  "dil": "tr",
  "oyunSurumu": "a2b99519c6ab64ae4ef55d968bf04cf6f7d38c2b645dace1eb030cc2e34eae4a",
  "model": "",
- "tarih": "2026-11-19T00:10:21.409Z",
+ "tarih": "2026-11-19T00:14:55.097Z",
  "cevirenler": [
   "Türkçesi Var"
  ],
@@ -10134,7 +10134,7 @@
    "kaynakOzeti": "d438686e54df812d"
   },
   "$loading": {
-   "tr": "YÜKLENİYOR... - TÜRKÇESİ VAR SUNAR",
+   "tr": "YÜKLENİYOR...",
    "kaynakOzeti": "b6dcb96448c66497"
   },
   "$loading_profile_data": {
@@ -10146,7 +10146,7 @@
    "kaynakOzeti": "6bc666d687a67fe5"
   },
   "$loading_progress": {
-   "tr": "YÜKLENİYOR...<load_progress>% - TÜRKÇESİ VAR SUNAR",
+   "tr": "YÜKLENİYOR...<load_progress>%",
    "kaynakOzeti": "61737476c950dbce"
   },
   "$localizable_signs": {
@@ -16398,11 +16398,11 @@
    "kaynakOzeti": "953ee20972f67d78"
   },
   "m3_hold_continue": {
-   "tr": "DEVAM ETMEK İÇİN <use> TUŞUNU BASILI TUT",
+   "tr": "DEVAM ETMEK İÇİN <use> TUŞUNU BASILI TUT - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "54319758cf66c0dc"
   },
   "m3_hold_continue_xbox": {
-   "tr": "DEVAM ETMEK İÇİN <xpad_x> TUŞUNU BASILI TUT",
+   "tr": "DEVAM ETMEK İÇİN <xpad_x> TUŞUNU BASILI TUT - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "cc96f6bb9fd54c7e"
   },
   "m3_jorney_map_hint": {
@@ -16770,11 +16770,11 @@
    "kaynakOzeti": "0a5c89d5a951aec4"
   },
   "m3_loader_hint_hold": {
-   "tr": "BASILI TUT <menu_ok>",
+   "tr": "BASILI TUT <menu_ok> - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "3d89d3e697858c64"
   },
   "m3_loader_hint_hold_xbox": {
-   "tr": "BASILI TUT <xpad_x>",
+   "tr": "BASILI TUT <xpad_x> - TÜRKÇESİ VAR SUNAR",
    "kaynakOzeti": "f5dd288ff354864e"
   },
   "m3_m06_backpack_start_note": {
