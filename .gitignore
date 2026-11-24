@@ -12,3 +12,8 @@ dist-yeni/
 turkcesi-var-motor/
 Türkçesi Var Logo/
 turkcesi-var-sunucu/
+
+# Canlı Çeviri derleme çıktıları
+canli/**/bin/
+canli/**/obj/
+canli/cikti/
