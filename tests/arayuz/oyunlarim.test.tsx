@@ -107,6 +107,21 @@ describe("Oyunlarım", () => {
     expect(screen.queryByRole("button", { name: "Başka oyunlar için Canlı Çeviri" })).toBeNull();
   });
 
+  it.each([
+    ["kurulu hazır oyun varken", [METRO]],
+    ["hiç oyun yokken", []],
+  ])("%s kurulu olmayan hazır oyunu arayınca özet kutusu yok, satır listede", (_ad, oyunlar) => {
+    const MAFIA: DesteklenenOyun = { kimlik: "mafiatheoldcountry", ad: "Mafia: The Old Country", klasorAdi: "Mafia The Old Country", tanimaDosyalari: ["mafia.exe"] };
+    const { container } = render(<Oyunlarim {...ortak} oyunlar={oyunlar} desteklenenler={[...DESTEK, MAFIA]} durumlar={{}} onCanliyaGit={vi.fn()} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "mafia" } });
+    const bolum = screen.getByRole("region", { name: "Türkçesi hazır" });
+    expect(within(bolum).queryByText(/Bilgisayarında Türkçesi hazır bir oyun bulunamadı/)).toBeNull();
+    expect(within(bolum).queryByRole("button", { name: "Başka oyunlar için Canlı Çeviri" })).toBeNull();
+    const satirlar = [...container.querySelectorAll(".eksik-satir")];
+    expect(satirlar).toHaveLength(1);
+    expect(satirlar[0]!.textContent).toContain("Mafia: The Old Country");
+  });
+
   it("özet kutusunda en çok 4 ad; fazlası 've N oyun daha'", () => {
     const alti: DesteklenenOyun[] = Array.from({ length: 6 }, (_, i) => ({ kimlik: `o${i}`, ad: `Oyun ${i + 1}`, klasorAdi: `O${i}`, tanimaDosyalari: ["a.exe"] }));
     const { unmount } = render(<Oyunlarim {...ortak} oyunlar={[]} desteklenenler={alti} durumlar={{}} />);
