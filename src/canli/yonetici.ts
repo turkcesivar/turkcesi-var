@@ -49,12 +49,18 @@ export class CanliYonetici {
   private surec: CanliSurec | null = null;
   private tampon = "";
   /** Süren basla oturumu: yoklanan oyun süreci. */
-  private oturum: { sureciAdi: string } | null = null;
+  private oturum: { sureciAdi: string; yol: string; oyunAdi: string; kimlik?: string } | null = null;
+  /** Oturumda canli.exe'nin bildirdiği son hata kodu (paketli/yasakli ayrımı için). */
+  private oturumHatasi: string | null = null;
+  /** Sunucunun reddettiği oyunun yolu: başka pencere öne gelene kadar yeniden başlatılmaz. */
+  private engelliYol: string | null = null;
   private surecYoklama: unknown = null;
   private surecYoklaniyor = false;
   private eslesmeYoklama: unknown = null;
   private eslesmeYoklaniyor = false;
   private uyariSayaci: unknown = null;
+  /** kapat() sonrası hiçbir zamanlayıcı ya da süreç başlatılmaz. */
+  private kapandi = false;
 
   constructor(o: YoneticiSecenekleri) {
     this.o = o;
@@ -192,7 +198,9 @@ export class CanliYonetici {
       if (e) {
         this.d.eslesme = e;
         const r = await this.o.sunucu.durum(null, e.numara);
+        // Teslim edilen lisans kapanıştan sonra da kaydedilir (sunucu bir kez verir).
         if (this.lisansTeslimi(r)) return;
+        if (this.kapandi) return;
         this.eslesmeYoklamasiBaslat();
         const lisans = this.lisansOku();
         if (!lisans) {
@@ -200,7 +208,9 @@ export class CanliYonetici {
           return;
         }
       }
-      this.sonucUygula(await this.o.sunucu.durum(this.lisansOku()));
+      const r = await this.o.sunucu.durum(this.lisansOku());
+      if (this.kapandi) return;
+      this.sonucUygula(r);
     } catch {
       this.d.lisans = null;
       this.d.sunucuHatasi = "gecici_hata";
@@ -223,6 +233,7 @@ export class CanliYonetici {
   async eslestirBaslat(): Promise<{ hata?: string }> {
     const r = await this.o.sunucu.eslestir();
     if (!r.tamam) return { hata: r.hata };
+    if (this.kapandi) return { hata: "kapandi" };
     const e: Eslesme = { numara: r.veri.numara, bitis: r.veri.bitis };
     this.d.eslesme = e;
     this.eslesmeYaz(e);
@@ -232,7 +243,7 @@ export class CanliYonetici {
   }
 
   private eslesmeYoklamasiBaslat(): void {
-    if (this.eslesmeYoklama !== null) return;
+    if (this.kapandi || this.eslesmeYoklama !== null) return;
     this.eslesmeYoklama = this.aralik(() => void this.eslesmeYokla(), YOKLAMA_MS);
   }
 
@@ -262,7 +273,7 @@ export class CanliYonetici {
   // ---- canli.exe ----
 
   calistir(): void {
-    if (this.surec) return;
+    if (this.kapandi || this.surec) return;
     if (!this.lisansOku()) return;
     const ld = this.d.lisans?.durum;
     if (ld !== "etkin" && ld !== "hak_bitti") return;
@@ -308,6 +319,7 @@ export class CanliYonetici {
 
   /** Uygulama kapanırken: süreci kapatır, yoklamaları durdurur, dinleyicileri bırakır. */
   kapat(): void {
+    this.kapandi = true;
     const s = this.surec;
     this.durdur();
     try {
@@ -334,11 +346,13 @@ export class CanliYonetici {
   private surecBirak(): void {
     this.surec = null;
     this.tampon = "";
+    this.engelliYol = null;
     this.oturumBirak();
   }
 
   private oturumBirak(): void {
     this.oturum = null;
+    this.oturumHatasi = null;
     this.araligiDurdur(this.surecYoklama);
     this.surecYoklama = null;
   }
@@ -387,6 +401,22 @@ export class CanliYonetici {
       case "durdu":
         // "komut": kendi dur/basla komutumuzun yanıtı; durum zaten ayarlı.
         if (o.neden === "komut") return;
+        if (o.neden === "lisans" && this.oturum && (this.oturumHatasi === "paketli" || this.oturumHatasi === "yasakli")) {
+          // Sunucu bu oyunu reddetti: canli.exe ve izleme sürer, oyun engel olarak gösterilir.
+          const ot = this.oturum;
+          this.d.engel = {
+            tur: this.oturumHatasi === "paketli" ? "paketli" : "hile",
+            oyunAdi: ot.oyunAdi,
+            ...(ot.kimlik ? { kimlik: ot.kimlik } : {}),
+          };
+          this.engelliYol = ot.yol;
+          this.oturumBirak();
+          this.d.calisma = "bekleniyor";
+          delete this.d.oyunAdi;
+          delete this.d.hata;
+          this.yay();
+          return;
+        }
         if (o.neden === "lisans") {
           this.komut({ komut: "cik" });
           this.surecBirak();
@@ -421,6 +451,7 @@ export class CanliYonetici {
         return;
       case "hata":
         if (typeof o.kod !== "string") return;
+        if (this.oturum) this.oturumHatasi = o.kod;
         this.d.hata = o.kod;
         this.yay();
         return;
@@ -429,8 +460,18 @@ export class CanliYonetici {
 
   private onPlan(yol: string | null): void {
     if (!this.surec || this.oturum) return;
+    // Sunucunun reddettiği oyun hâlâ öndeyse engel kalır; başka pencere gelince unutulur.
+    if (yol !== null && yol === this.engelliYol) return;
+    this.engelliYol = null;
     const oyun = oyunBul(yol, this.o.oyunlar());
-    if (!oyun || !yol) return;
+    if (!oyun || !yol) {
+      // Engelli olmayan bir pencere öne geldi: eski engel kalkar.
+      if (this.d.engel) {
+        delete this.d.engel;
+        this.yay();
+      }
+      return;
+    }
     if (oyun.durum === "hile-korumali") {
       this.d.engel = { tur: "hile", oyunAdi: oyun.ad, ...(oyun.kimlik ? { kimlik: oyun.kimlik } : {}) };
       this.yay();
@@ -457,7 +498,8 @@ export class CanliYonetici {
       profil: null,
       sureciAdi,
     });
-    this.oturum = { sureciAdi };
+    this.oturum = { sureciAdi, yol, oyunAdi: oyun.ad, ...(oyun.kimlik ? { kimlik: oyun.kimlik } : {}) };
+    this.oturumHatasi = null;
     this.d.oyunAdi = oyun.ad;
     delete this.d.engel;
     delete this.d.hata;

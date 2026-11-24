@@ -291,6 +291,95 @@ describe("CanliYonetici", () => {
     expect(k.y.durum().hata).toBe("cihaz_dustu");
   });
 
+  it.each([
+    ["paketli", "paketli"],
+    ["yasakli", "hile"],
+  ] as const)("sunucu_%s_derse_surec_kalir_engel_ve_bekler", async (kod, tur) => {
+    const k = kur({ oyunlar: [oyun(STEAM, { ad: "Oyun X", kimlik: "oyun-x" })] });
+    await k.y.yenile();
+    k.y.calistir();
+    k.surec.olay({ olay: "onplan", yol: STEAM + "\\x.exe" });
+    k.surec.olay({ olay: "hata", kod });
+    k.surec.olay({ olay: "durdu", neden: "lisans" });
+    const d = k.y.durum();
+    expect(d.calisma).toBe("bekleniyor");
+    expect(d.engel).toEqual({ tur, oyunAdi: "Oyun X", kimlik: "oyun-x" });
+    expect(d.hata).toBeUndefined();
+    expect(k.surec.komutlar().some((c) => c.komut === "cik")).toBe(false);
+    expect(k.sunucu.durum).toHaveBeenCalledTimes(1); // yenile çağrılmadı
+    // yoklama durdu
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(k.acik).not.toHaveBeenCalled();
+    // aynı oyun önde kaldıkça yeniden başlamaz
+    k.surec.olay({ olay: "onplan", yol: STEAM + "\\x.exe" });
+    expect(k.surec.komutlar().filter((c) => c.komut === "basla")).toHaveLength(1);
+    expect(k.y.durum().engel?.tur).toBe(tur);
+    // başka pencere öne gelince engel kalkar, oyun dönünce yeniden denenir
+    k.surec.olay({ olay: "onplan", yol: "C:\\Windows\\explorer.exe" });
+    expect(k.y.durum().engel).toBeUndefined();
+    k.surec.olay({ olay: "onplan", yol: STEAM + "\\x.exe" });
+    expect(k.surec.komutlar().filter((c) => c.komut === "basla")).toHaveLength(2);
+    // süreç hiç kapanmadı
+    k.surec.olay({ olay: "basladi" });
+    expect(k.y.durum().calisma).toBe("cevriliyor");
+  });
+
+  it.each(["lisans_yok", "cihaz_dustu", "suresi_bitti"])("durdu_lisans_%s_kapatir", async (kod) => {
+    const k = kur({ oyunlar: [oyun(STEAM)] });
+    await k.y.yenile();
+    k.y.calistir();
+    k.surec.olay({ olay: "onplan", yol: STEAM + "\\x.exe" });
+    k.surec.olay({ olay: "hata", kod });
+    k.surec.olay({ olay: "durdu", neden: "lisans" });
+    expect(k.y.durum().calisma).toBe("kapali");
+    expect(k.y.durum().hata).toBe(kod);
+    expect(k.y.durum().engel).toBeUndefined();
+    expect(k.surec.komutlar().some((c) => c.komut === "cik")).toBe(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(k.sunucu.durum).toHaveBeenCalledTimes(2);
+  });
+
+  it("eski_engel_oyun_disi_pencerede_kalkar", async () => {
+    const k = kur({ oyunlar: [oyun(STEAM, { ad: "Paketli", durum: "destekleniyor" })] });
+    await k.y.yenile();
+    k.y.calistir();
+    k.surec.olay({ olay: "onplan", yol: STEAM + "\\x.exe" });
+    expect(k.y.durum().engel?.tur).toBe("paketli");
+    k.surec.olay({ olay: "onplan", yol: "C:\\Windows\\explorer.exe" });
+    expect(k.y.durum().engel).toBeUndefined();
+    k.surec.olay({ olay: "onplan", yol: STEAM + "\\x.exe" });
+    expect(k.y.durum().engel?.tur).toBe("paketli");
+    k.surec.olay({ olay: "onplan", yol: null });
+    expect(k.y.durum().engel).toBeUndefined();
+  });
+
+  it("kapat_sonrasi_eslesme_yoklamasi_ve_surec_baslamaz", async () => {
+    const k = kur({ durum: () => ({ tamam: true, veri: { durum: "lisanssiz" } }) });
+    let coz: (v: SunucuSonucu<{ numara: string; bitis: number }>) => void = () => {};
+    k.sunucu.eslestir.mockImplementationOnce(() => new Promise((r) => (coz = r)));
+    const p = k.y.eslestirBaslat();
+    k.y.kapat();
+    coz({ tamam: true, veri: { numara: "1", bitis: Date.now() + 3600_000 } });
+    await p;
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(k.sunucu.durum).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    k.y.calistir();
+    expect(k.baslat).not.toHaveBeenCalled();
+  });
+
+  it("kapat_sonrasi_yenile_yoklama_baslatmaz", async () => {
+    const k = kur({ durum: () => ({ tamam: true, veri: { durum: "lisanssiz" } }) });
+    k.depo.eslesme = { numara: "9", bitis: Date.now() + 3600_000 };
+    const p = k.y.yenile();
+    k.y.kapat();
+    await p;
+    const sayi = k.sunucu.durum.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(20000);
+    expect(k.sunucu.durum.mock.calls.length).toBe(sayi);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("durdu_hata_bekler", async () => {
     const k = kur({ oyunlar: [oyun(STEAM)] });
     await k.y.yenile();
@@ -323,9 +412,13 @@ describe("CanliYonetici", () => {
     const k = kur();
     await k.y.yenile();
     k.y.calistir();
+    await k.y.eslestirBaslat();
+    k.surec.olay({ olay: "uyari", kod: "hiz" });
+    expect(vi.getTimerCount()).toBe(2); // eşleşme yoklaması + uyarı sayacı
     k.y.kapat();
     expect(k.surec.olduruldu).toBe(true);
     expect(k.y.durum().calisma).toBe("kapali");
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it("dinle_degisiklikleri_bildirir", async () => {
@@ -417,7 +510,7 @@ describe("CanliYonetici", () => {
       throw new Error("EACCES");
     };
     k.sunucu.deneme.mockResolvedValueOnce({ tamam: true, veri: { lisans: "D", durum: "etkin", tur: "deneme" } });
-    expect((await k.y.deneme()).hata).toBeTruthy();
+    expect((await k.y.deneme()).hata).toBe("kayit");
     expect(await k.y.eslestirBaslat()).toEqual({});
   });
 });
