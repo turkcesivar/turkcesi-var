@@ -177,5 +177,50 @@ namespace Canli.Testler
             _cikti.WriteLine($"{dolu}/{dosyalar.Length} dosyada metin okundu");
             Assert.True(dolu * 2 >= dosyalar.Length);
         }
+
+        [Fact]
+        public void al_bos_dikdortgen()
+        {
+            Assert.Throws<ArgumentException>(() => Yakalayici.Al(new Rectangle(0, 0, 0, 10)));
+            Assert.Throws<ArgumentException>(() => Yakalayici.Al(new Rectangle(0, 0, 10, -1)));
+        }
+
+        [Fact]
+        public void oku_cok_buyuk_goruntu_olceklenir()
+        {
+            var ocr = Okuyucu.Olustur(out _);
+            if (ocr == null) { _cikti.WriteLine("en-US OCR yok, atlandi."); return; }
+            using (var b = new Bitmap(12000, 200))
+            {
+                using (var g = Graphics.FromImage(b)) g.Clear(Color.White);
+                YaziCiz(b, Color.Black, Yazi);
+                var s = ocr.Oku(b);
+                Assert.NotNull(s);
+                foreach (var l in s) Assert.True(l.Kutu.Right <= 12000 + 50);
+            }
+        }
+
+        [Fact]
+        public void temizle_ve_oku_dongusu_bellek_sizdirmaz()
+        {
+            var ocr = Okuyucu.Olustur(out _);
+            if (ocr == null) { _cikti.WriteLine("en-US OCR yok, atlandi."); return; }
+            using (var k = SariOrnek())
+            {
+                for (int i = 0; i < 20; i++) { using (var t = RenkSuzgeci.Temizle(k, RenkKipi.Sari, 185, out _, out _)) ocr.Oku(t); }
+                long once = OzelBellek();
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                for (int i = 0; i < 500; i++) { using (var t = RenkSuzgeci.Temizle(k, RenkKipi.Sari, 185, out _, out _)) ocr.Oku(t); }
+                long sonra = OzelBellek();
+                _cikti.WriteLine($"{sw.ElapsedMilliseconds} ms, artis {(sonra - once) / 1048576} MB");
+                Assert.True(sonra - once < 50L * 1048576, "özel bellek " + (sonra - once) / 1048576 + " MB arttı");
+            }
+        }
+
+        private static long OzelBellek()
+        {
+            GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+            return System.Diagnostics.Process.GetCurrentProcess().PrivateMemorySize64;
+        }
     }
 }

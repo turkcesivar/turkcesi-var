@@ -11,10 +11,16 @@ namespace Canli.Goruntu
     {
         public static Bitmap Al(Rectangle ekranPikseli)
         {
+            if (ekranPikseli.Width <= 0 || ekranPikseli.Height <= 0)
+                throw new ArgumentException("Yakalama dikdörtgeni boş olamaz.", nameof(ekranPikseli));
             var b = new Bitmap(ekranPikseli.Width, ekranPikseli.Height, PixelFormat.Format32bppArgb);
-            using (var g = Graphics.FromImage(b))
-                g.CopyFromScreen(ekranPikseli.X, ekranPikseli.Y, 0, 0, ekranPikseli.Size);
-            return b;
+            try
+            {
+                using (var g = Graphics.FromImage(b))
+                    g.CopyFromScreen(ekranPikseli.X, ekranPikseli.Y, 0, 0, ekranPikseli.Size);
+                return b;
+            }
+            catch { b.Dispose(); throw; }
         }
 
         public static byte[] KucukImza(Rectangle r)
@@ -33,8 +39,8 @@ namespace Canli.Goruntu
                 }
                 var d = k.LockBits(new Rectangle(0, 0, 64, 36), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
                 var px = new int[64 * 36];
-                Marshal.Copy(d.Scan0, px, 0, px.Length);
-                k.UnlockBits(d);
+                try { Marshal.Copy(d.Scan0, px, 0, px.Length); }
+                finally { k.UnlockBits(d); }
                 var o = new byte[px.Length];
                 for (int i = 0; i < px.Length; i++)
                 {
