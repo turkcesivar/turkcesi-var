@@ -123,6 +123,13 @@ namespace Canli
             }
             if (gecerli.Count > 0) parcalar.Add(gecerli);
 
+            if (parcalar.Count == 0)
+            {
+                bool uzunVar = Enumerable.Range(0, n).Any(i => ogeler[i] != null && ogeler[i].Length > EnCokSatirKarakter);
+                if (uzunVar) sonuc.HataKodu = "cok_uzun";
+                return sonuc;
+            }
+
             var gorevler = parcalar.Select(p => ParcaAsync(oyun, oyunAdi, p.Select(i => ogeler[i]).ToArray())).ToArray();
             var yanitlar = await Task.WhenAll(gorevler);
 
@@ -181,7 +188,11 @@ namespace Canli
 
                     using (var yanit = await _istemci.SendAsync(istek, HttpCompletionOption.ResponseHeadersRead, iptal.Token).ConfigureAwait(false))
                     {
-                        string metin = await yanit.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        // Gövde okuması da aynı süre sınırına bağlı: jeton akışı kesmezse yarışla bırakılır.
+                        var okuma = yanit.Content.ReadAsStringAsync();
+                        var bitenGorev = await Task.WhenAny(okuma, Task.Delay(Timeout.Infinite, iptal.Token)).ConfigureAwait(false);
+                        if (bitenGorev != okuma) throw new OperationCanceledException(iptal.Token);
+                        string metin = await okuma.ConfigureAwait(false);
                         JsonDocument belge = null;
                         try { belge = JsonDocument.Parse(metin); } catch (Exception) { }
 

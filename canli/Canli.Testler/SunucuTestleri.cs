@@ -37,6 +37,32 @@ namespace Canli.Testler
             }
         }
 
+        private sealed class AskidaGovdeIsleyici : HttpMessageHandler
+        {
+            private sealed class DonmusAkis : System.IO.Stream
+            {
+                public override bool CanRead { get { return true; } }
+                public override bool CanSeek { get { return false; } }
+                public override bool CanWrite { get { return false; } }
+                public override long Length { get { throw new NotSupportedException(); } }
+                public override long Position { get { throw new NotSupportedException(); } set { throw new NotSupportedException(); } }
+                public override void Flush() { }
+                public override int Read(byte[] b, int o, int c) { Thread.Sleep(Timeout.Infinite); return 0; }
+                public override System.Threading.Tasks.Task<int> ReadAsync(byte[] b, int o, int c, CancellationToken t)
+                {
+                    return new TaskCompletionSource<int>().Task;
+                }
+                public override long Seek(long o, System.IO.SeekOrigin s) { throw new NotSupportedException(); }
+                public override void SetLength(long v) { throw new NotSupportedException(); }
+                public override void Write(byte[] b, int o, int c) { throw new NotSupportedException(); }
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage istek, CancellationToken iptal)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new DonmusAkis()) });
+            }
+        }
+
         private static SunucuIstemcisi Yap(HttpMessageHandler h)
         {
             return new SunucuIstemcisi(h, "https://api.test", "K", "ozet123");
@@ -206,6 +232,38 @@ namespace Canli.Testler
             var ogeler = Enumerable.Range(0, 10).Select(i => "o" + i).ToArray();
             var s = await Yap(h).MenuAsync("o", "a", ogeler);
             Assert.Equal("suresi_bitti", s.HataKodu);
+        }
+
+        [Fact]
+        public async Task govde_okumasi_askida_zaman_asimi()
+        {
+            var s = Yap(new AskidaGovdeIsleyici());
+            s.ZamanAsimi = TimeSpan.FromMilliseconds(300);
+            var gorev = s.CeviriAsync("o", "a", "Hi", null);
+            Assert.Same(gorev, await Task.WhenAny(gorev, Task.Delay(5000)));
+            Assert.Equal("cevrimdisi", (await gorev).HataKodu);
+        }
+
+        [Fact]
+        public async Task menu_durduran_uyariyi_ezer()
+        {
+            var h = new SahteIsleyici
+            {
+                Yanit = (i, g) => g.Contains("o9") ? (HttpStatusCode.InternalServerError, "{\"hata\":\"yapilandirma\"}") : ((HttpStatusCode)429, "{\"hata\":\"hiz\"}")
+            };
+            var ogeler = Enumerable.Range(0, 10).Select(i => "o" + i).ToArray();
+            var s = await Yap(h).MenuAsync("o", "a", ogeler);
+            Assert.Equal("yapilandirma", s.HataKodu);
+        }
+
+        [Fact]
+        public async Task menu_hepsi_atlanirsa_hata_kodu()
+        {
+            var h = new SahteIsleyici { Yanit = (i, g) => (HttpStatusCode.OK, "{}") };
+            var c = Yap(h);
+            Assert.Equal("cok_uzun", (await c.MenuAsync("o", "a", new[] { new string('x', 301) })).HataKodu);
+            Assert.Null((await c.MenuAsync("o", "a", new string[] { null })).HataKodu);
+            Assert.Empty(h.Istekler);
         }
     }
 }

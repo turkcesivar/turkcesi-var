@@ -51,20 +51,10 @@ namespace Canli
             }
         }
 
-        /// <summary>Menü parçalarında yayılan "durduran" kodlar (lisans/oyun ile ilgili olanlar).</summary>
+        /// <summary>Çevirmeyi durduran kodlar; tek kaynak Siniflandir tablosudur.</summary>
         public static bool DurduranMi(string hataKodu)
         {
-            switch (hataKodu)
-            {
-                case "lisans_yok":
-                case "cihaz_dustu":
-                case "suresi_bitti":
-                case "paketli":
-                case "yasakli":
-                    return true;
-                default:
-                    return false;
-            }
+            return Siniflandir(hataKodu).durdur;
         }
     }
 }
