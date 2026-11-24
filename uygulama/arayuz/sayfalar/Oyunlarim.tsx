@@ -205,10 +205,10 @@ export function Oyunlarim(p: {
                 <OneCikanKart key={o.klasor} o={o} d={durum(o)} onSec={p.onSec} sira={i} />
               ))}
             </div>
-          ) : (
+          ) : aranan === "" && p.oyunlar.every((o) => o.durum !== "destekleniyor") ? (
             <div className="kompakt-kutu">
               <span className="soluk">
-                {`Bilgisayarında Türkçesi hazır bir oyun bulunamadı.${eksik.length > 0 ? ` Türkçesi hazır oyunlar: ${eksik.map((d) => d.ad).join(", ")}.` : ""}`}
+                {`Bilgisayarında Türkçesi hazır bir oyun bulunamadı.${eksik.length > 0 ? ` Türkçesi hazır oyunlar: ${eksik.slice(0, 4).map((d) => d.ad).join(", ")}${eksik.length > 4 ? ` ve ${eksik.length - 4} oyun daha` : ""}.` : ""}`}
               </span>
               {p.onCanliyaGit && (
                 <Dugme tur="ikincil" onClick={p.onCanliyaGit}>
@@ -216,7 +216,7 @@ export function Oyunlarim(p: {
                 </Dugme>
               )}
             </div>
-          )}
+          ) : null}
           {eksik.length > 0 && <EksikListe eksik={eksik} acik={aranan !== ""} onKlasorSec={p.onKlasorSec} />}
         </section>
       )}

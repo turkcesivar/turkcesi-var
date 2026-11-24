@@ -100,6 +100,22 @@ describe("Oyunlarım", () => {
     expect(onCanliyaGit).toHaveBeenCalledTimes(1);
   });
 
+  it("kurulu hazır oyun varken eşleşmeyen aramada özet kutusu çıkmaz", () => {
+    render(<Oyunlarim {...ortak} oyunlar={[METRO]} durumlar={{}} onCanliyaGit={vi.fn()} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zzzz" } });
+    expect(screen.queryByText(/Bilgisayarında Türkçesi hazır bir oyun bulunamadı/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Başka oyunlar için Canlı Çeviri" })).toBeNull();
+  });
+
+  it("özet kutusunda en çok 4 ad; fazlası 've N oyun daha'", () => {
+    const alti: DesteklenenOyun[] = Array.from({ length: 6 }, (_, i) => ({ kimlik: `o${i}`, ad: `Oyun ${i + 1}`, klasorAdi: `O${i}`, tanimaDosyalari: ["a.exe"] }));
+    const { unmount } = render(<Oyunlarim {...ortak} oyunlar={[]} desteklenenler={alti} durumlar={{}} />);
+    expect(screen.getByText("Bilgisayarında Türkçesi hazır bir oyun bulunamadı. Türkçesi hazır oyunlar: Oyun 1, Oyun 2, Oyun 3, Oyun 4 ve 2 oyun daha.")).toBeTruthy();
+    unmount();
+    render(<Oyunlarim {...ortak} oyunlar={[]} desteklenenler={alti.slice(0, 4)} durumlar={{}} />);
+    expect(screen.getByText("Bilgisayarında Türkçesi hazır bir oyun bulunamadı. Türkçesi hazır oyunlar: Oyun 1, Oyun 2, Oyun 3, Oyun 4.")).toBeTruthy();
+  });
+
   it("onCanliyaGit yoksa Canlı Çeviri düğmesi çıkmaz; Diğer oyunlarda varsa çıkar", () => {
     const { rerender } = render(<Oyunlarim {...ortak} oyunlar={[oyun("GodOfWar", "desteklenmiyor")]} durumlar={{}} />);
     expect(screen.queryByRole("button", { name: /Canlı Çeviri/ })).toBeNull();
