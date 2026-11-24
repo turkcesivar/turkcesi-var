@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { cihazOzeti } from "../../src/canli/cihaz.js";
+import { cihazOzeti, makineGuidOku } from "../../src/canli/cihaz.js";
 import { CanliSunucu } from "../../src/canli/sunucu.js";
 
 const TABAN = "https://api.turkcesivar.com";
@@ -22,7 +22,29 @@ describe("cihazOzeti", () => {
   it("cihaz_ozeti_canli_exe_ile_ayni", () => {
     const beklenen = createHash("sha256").update("turkcesivar:ABC", "utf8").digest("hex");
     expect(cihazOzeti("ABC")).toBe(beklenen);
+    expect(cihazOzeti("ABC")).toBe("dbc4ac175eb51cb27b7620a14b04e998b90e28a250bb48f45a1f03b0cf9766c1");
     expect(cihazOzeti("ABC")).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("makineGuidOku", () => {
+  it("kayit_yolu_dogru_ve_cikti_ayrisir", async () => {
+    let arg: string[] = [];
+    const guid = await makineGuidOku((komut, a, bitti) => {
+      expect(komut).toBe("reg");
+      arg = a;
+      bitti(null, String.raw`
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography
+    MachineGuid    REG_SZ    1234-abcd
+`);
+    });
+    expect(arg).toEqual(["query", String.raw`HKLM\SOFTWARE\Microsoft\Cryptography`, "/v", "MachineGuid"]);
+    expect(guid).toBe("1234-abcd");
+  });
+
+  it("hata_ve_bozuk_cikti_reddeder", async () => {
+    await expect(makineGuidOku((_k, _a, b) => b(new Error("x"), ""))).rejects.toThrow();
+    await expect(makineGuidOku((_k, _a, b) => b(null, "yok"))).rejects.toThrow();
   });
 });
 
