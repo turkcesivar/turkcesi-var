@@ -20,3 +20,18 @@ export const SEVIYE_TAVAN: Record<LisansTuru, { ay: number; gun: number }> = {
   destekci: { ay: 20000, gun: 2000 },
   ust: { ay: 50000, gun: 5000 },
 };
+
+// Uygulamanın canlı çeviri durumu (arayüze giden düz veri).
+export type CanliCalisma = "kapali" | "bekleniyor" | "cevriliyor" | "duraklatildi";
+
+export interface CanliDurum {
+  yukleniyor: boolean;
+  lisans: LisansBilgisi | null /* null: sunucuya ulaşılamadı */;
+  sunucuHatasi?: string;
+  eslesme?: { numara: string; bitis: number };
+  calisma: CanliCalisma;
+  oyunAdi?: string;
+  uyari?: string;
+  hata?: string;
+  engel?: { tur: "paketli" | "hile"; oyunAdi: string; kimlik?: string };
+}
