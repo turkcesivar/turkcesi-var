@@ -1,15 +1,20 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Canli
 {
     internal static class Program
     {
+        [DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
+
         [STAThread]
         private static int Main(string[] args)
         {
+            SetProcessDPIAware();
             ICikis cikis = new KonsolCikis();
             cikis.Yaz(Protokol.Olay("hazir"));
 
