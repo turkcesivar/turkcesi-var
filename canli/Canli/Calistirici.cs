@@ -81,7 +81,7 @@ namespace Canli
             _menu = new MenuAlgilayici(saatMs);
             _menuHatti = new MenuHatti(komut.Oyun, komut.OyunAdi, sunucu, ekranOkuyucu, kaplama, _menu, HataIsle, () => Durdu,
                                        _tani, saatMs);
-            _profil = komut.Profil ?? Profil.Varsayilan;
+            _profil = ProfilSec(komut, null);
         }
 
         public bool Durdu { get; private set; }
@@ -172,13 +172,14 @@ namespace Canli
         /// <summary>Komutta profil verildiyse o geçerlidir; yoksa sunucunun profili (eksik alanlar varsayılandan).</summary>
         public static Profil ProfilSec(Komut komut, Profil sunucu)
         {
-            if (komut.ProfilVerildi || sunucu == null) return komut.Profil ?? Profil.Varsayilan;
             var v = Profil.Varsayilan;
+            Profil kaynak = komut.ProfilVerildi || sunucu == null ? (komut.Profil ?? v) : sunucu;
+            // Geçersiz bölge (boyutu 0 ya da ekran dışı) sessizce hiç çalışmamak yerine varsayılana döner.
             return new Profil
             {
-                AltyaziBolgesi = sunucu.AltyaziBolgesi != null && sunucu.AltyaziBolgesi.Length == 4 ? sunucu.AltyaziBolgesi : v.AltyaziBolgesi,
-                Renk = sunucu.Renk == "beyaz" || sunucu.Renk == "sari" || sunucu.Renk == "ikisi" ? sunucu.Renk : v.Renk,
-                EkBolgeler = sunucu.EkBolgeler != null ? sunucu.EkBolgeler.Where(b => b != null && b.Length == 4).ToArray() : v.EkBolgeler
+                AltyaziBolgesi = Profil.BolgeGecerli(kaynak.AltyaziBolgesi) ? kaynak.AltyaziBolgesi : v.AltyaziBolgesi,
+                Renk = kaynak.Renk == "beyaz" || kaynak.Renk == "sari" || kaynak.Renk == "ikisi" ? kaynak.Renk : v.Renk,
+                EkBolgeler = kaynak.EkBolgeler != null ? kaynak.EkBolgeler.Where(Profil.BolgeGecerli).ToArray() : v.EkBolgeler
             };
         }
 

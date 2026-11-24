@@ -18,6 +18,15 @@ Girdi komutları: `basla` (lisans, oyun, oyunAdi, profil, sureciAdi), `duraklat`
 
 Çıktı olayları: `hazir`, `basladi`, `durdu`, `kalan`, `uyari`, `hata`. Geçersiz bir satır `{"olay":"hata","kod":"gecersiz_komut"}` döndürür. stdout'a bu kanal dışında hiçbir şey yazılmaz.
 
+`hata` kodları: `ocr_dil_yok`, `gecersiz_komut`, `lisans_yok`, `cihaz_dustu`, `suresi_bitti`, `paketli`, `yasakli`
+(bu beşinde `durdu` nedeni `lisans`), ayrıca `yapilandirma` ve `cihaz_yok` (sunucu yapılandırma/istek hatası) ve
+`beklenmeyen` (programın kendi hatası); bu üçünde `durdu` nedeni `hata`. Uygulama bilmediği bir kodu genel hata gibi göstermelidir.
+
+Uygulamadan (stdin) gelen `basla` komutunda `sureciAdi` zorunludur (yoksa `gecersiz_komut`): canli.exe yalnız o süreç
+öndeyken ekranı okur. Süreç adı boş bırakılabilen tek yol komut satırı sınamasıdır.
+
+Profil bölgeleri ekranın içinde ve boyutu sıfırdan büyük olmalıdır; geçersiz bölge varsayılana döner (ek bölge atlanır).
+
 Komut satırından deneme: `canli.exe --lisans K --oyun ID --oyunAdi AD [--renk sari] [--bolge x,y,g,y2] [--ek x,y,g,y2] [--surec Oyun.exe] [--tani]`
 
 ## Tanı kaydı

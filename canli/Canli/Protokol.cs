@@ -27,6 +27,15 @@ namespace Canli
                 };
             }
         }
+
+        /// <summary>Bölge [x, y, g, y2] ekranın içinde ve boyutu sıfırdan büyük mü.</summary>
+        public static bool BolgeGecerli(double[] b)
+        {
+            if (b == null || b.Length != 4) return false;
+            foreach (double d in b) if (double.IsNaN(d) || double.IsInfinity(d)) return false;
+            const double Pay = 1e-6;
+            return b[0] >= 0 && b[1] >= 0 && b[2] > 0 && b[3] > 0 && b[0] + b[2] <= 1 + Pay && b[1] + b[3] <= 1 + Pay;
+        }
     }
 
     /// <summary>stdin'den ya da komut satırından gelen bir komut.</summary>
@@ -42,6 +51,8 @@ namespace Canli
         public string SurecAdi;
         /// <summary>Tanı kaydı açık mı (--tani ya da "tani": true).</summary>
         public bool Tani;
+        /// <summary>Komut satırından geldi (sınama/tanı): süreç adı boş olabilir, stdin kapanınca çıkılmaz.</summary>
+        public bool KomutSatiri;
     }
 
     /// <summary>Olay satırlarının yazıldığı tek kanal.</summary>
@@ -148,7 +159,7 @@ namespace Canli
         {
             var profil = Profil.Varsayilan;
             var ek = new List<double[]>();
-            var k = new Komut { Tur = "basla", Profil = profil };
+            var k = new Komut { Tur = "basla", Profil = profil, KomutSatiri = true };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];

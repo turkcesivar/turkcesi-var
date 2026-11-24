@@ -236,6 +236,27 @@ namespace Canli.Testler
             Assert.Equal(300f, MenuYerlesimi.SatirSiniri(1800, 300, 1920));
         }
 
+        [Fact]
+        public void gecersiz_bolge_varsayilana_doner()
+        {
+            Assert.True(Profil.BolgeGecerli(new[] { 0.12, 0.78, 0.76, 0.17 }));
+            Assert.False(Profil.BolgeGecerli(new[] { 0.1, 0.8, 0.0, 0.1 }));      // genişlik 0
+            Assert.False(Profil.BolgeGecerli(new[] { 0.5, 0.9, 0.6, 0.2 }));      // ekran dışı
+            Assert.False(Profil.BolgeGecerli(new[] { -0.1, 0.0, 0.3, 0.1 }));
+            Assert.False(Profil.BolgeGecerli(null));
+
+            var komut = new Komut
+            {
+                ProfilVerildi = true,
+                Profil = new Profil { AltyaziBolgesi = new[] { 0.1, 0.8, 0.0, 0.1 }, Renk = "sari",
+                                      EkBolgeler = new[] { new[] { 0.0, 0.0, 0.3, 0.1 }, new[] { 0.9, 0.9, 0.5, 0.5 } } }
+            };
+            var p = Calistirici.ProfilSec(komut, null);
+            Assert.Equal(Profil.Varsayilan.AltyaziBolgesi, p.AltyaziBolgesi);
+            Assert.Equal("sari", p.Renk);
+            Assert.Single(p.EkBolgeler);
+        }
+
         // ---- Tanı kaydı ----
 
         [Fact]

@@ -60,7 +60,8 @@ namespace Canli
         public void MenuKapat()
         {
             _nesil++;
-            if (_algilayici.MenuAcik) _tani.Yaz("menu_kapandi");
+            // Otomatik kaldırmada algılayıcı MenuAcik'i zaten kapatmıştır; kutu varsa da kapanış sayılır.
+            if (_algilayici.MenuAcik || _menuKutular.Count > 0) _tani.Yaz("menu_kapandi");
             _algilayici.MenuAcik = false;
             if (_menuKutular.Count > 0) { _menuKutular = new List<MenuKutusu>(); Yenile(); }
         }

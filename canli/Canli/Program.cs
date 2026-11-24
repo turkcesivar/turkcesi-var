@@ -23,6 +23,7 @@ namespace Canli
         private static readonly HttpClientHandler Isleyici = new HttpClientHandler();
         private static Calistirici _calistirici;
         private static DosyaTani _tani;
+        private static volatile bool _cikIstendi;
 
         [STAThread]
         private static int Main(string[] args)
@@ -38,9 +39,11 @@ namespace Canli
             _cikis.Yaz(Protokol.Olay("hazir"));
 
             _okuyucu = Okuyucu.Olustur(out string ocrHata);
-            if (_okuyucu == null) _cikis.Yaz(Protokol.Olay("hata", ("kod", ocrHata)));
+            bool komutSatiri = args.Length > 0 && args[0].StartsWith("--", StringComparison.Ordinal);
+            // Komut satırı kipinde bu hata basla işlenirken bir kez yazılır.
+            if (_okuyucu == null && !komutSatiri) _cikis.Yaz(Protokol.Olay("hata", ("kod", ocrHata)));
 
-            if (args.Length > 0 && args[0].StartsWith("--", StringComparison.Ordinal))
+            if (komutSatiri)
             {
                 try
                 {
@@ -69,14 +72,15 @@ namespace Canli
                             _cikis.Yaz(Protokol.Olay("hata", ("kod", hata)));
                             continue;
                         }
-                        if (komut.Tur == "cik") break;
+                        if (komut.Tur == "cik") { _cikIstendi = true; break; }
                         ui.Post(_ => Isle(komut), null);
                     }
                 }
                 catch (IOException) { }
                 finally
                 {
-                    ui.Post(_ => Cik(), null);
+                    // Komut satırı kipinde stdin kapalı/NUL olabilir: yalnız "cik" ya da pencereyi kapatmak çıkarır.
+                    if (!komutSatiri || _cikIstendi) ui.Post(_ => Cik(), null);
                 }
             });
             okuyucu.IsBackground = true;
@@ -91,7 +95,9 @@ namespace Canli
             switch (komut.Tur)
             {
                 case "basla":
-                    if (string.IsNullOrEmpty(komut.Lisans) || string.IsNullOrEmpty(komut.Oyun))
+                    // Uygulamadan (stdin) gelen basla süreç adı vermek zorunda: yoksa öndeki her pencere okunurdu.
+                    if (string.IsNullOrEmpty(komut.Lisans) || string.IsNullOrEmpty(komut.Oyun)
+                        || (!komut.KomutSatiri && string.IsNullOrWhiteSpace(komut.SurecAdi)))
                     {
                         _cikis.Yaz(Protokol.Olay("hata", ("kod", Protokol.GecersizKomut)));
                         return;
