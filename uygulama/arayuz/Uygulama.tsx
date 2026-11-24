@@ -206,6 +206,7 @@ export function Uygulama() {
         onSec={(o) => setSayfa({ ad: "oyun", oyun: o })}
         onKlasorSec={(k) => void klasorSec(k)}
         onYenile={() => void oyunlariYenile()}
+        onCanliyaGit={() => setSayfa({ ad: "canli" })}
       />
     );
   } else if (sayfa.ad === "canli") {

@@ -50,25 +50,13 @@ function OneCikanKart({ o, d, onSec, sira }: { o: ArayuzOyunu; d?: OyunDurumu; o
   );
 }
 
-/** Türkçesi hazır ama bu bilgisayarda bulunamayan oyun: sade satır (kalabalık yapmasın diye büyük kart değil). */
+/** Türkçesi hazır ama bu bilgisayarda bulunamayan oyun: yalnız ad + düğme; dosyalar ve yol düğmenin ipucunda. */
 function EksikSatir({ d, onKlasorSec }: { d: DesteklenenOyun; onKlasorSec: (kimlik: string) => void }) {
+  const ipucu = `Klasörde şu dosyalar bulunur: ${d.tanimaDosyalari.join(", ")}. Steam'de genellikle …\\steamapps\\common\\${d.klasorAdi}`;
   return (
     <div className="eksik-satir" role="group" aria-label={`${d.ad} — bilgisayarında bulunamadı`}>
-      <div>
-        <div className="eksik-satir-ad">
-          <span>{d.ad}</span>
-          <Rozet tur="notr">Bilgisayarında bulunamadı</Rozet>
-        </div>
-        <span className="eksik-yol soluk">
-          Steam&apos;de genellikle <code>…\steamapps\common\{d.klasorAdi}</code>
-        </span>
-      </div>
-      <span className="dosyalar">
-        {d.tanimaDosyalari.map((f) => (
-          <code key={f}>{f}</code>
-        ))}
-      </span>
-      <Dugme tur="ikincil" simge="ara" onClick={() => onKlasorSec(d.kimlik)}>
+      <span className="eksik-satir-ad">{d.ad}</span>
+      <Dugme tur="ikincil" simge="ara" onClick={() => onKlasorSec(d.kimlik)} title={ipucu}>
         Klasörü seç
       </Dugme>
     </div>
@@ -76,8 +64,8 @@ function EksikSatir({ d, onKlasorSec }: { d: DesteklenenOyun; onKlasorSec: (kiml
 }
 
 /**
- * Bulunamayan Türkçesi hazır oyunlar: kapanabilir liste. Hiç kurulu Türkçe oyun yoksa ya da arama
- * yapılıyorsa açık gelir; yoksa kapalıdır (yüzlerce oyunun Türkçesi olsa da ekran kalabalıklaşmaz).
+ * Bulunamayan Türkçesi hazır oyunlar: kapanabilir liste. Her zaman kapalı gelir; yalnız arama
+ * yapılırken açılır (yüzlerce oyunun Türkçesi olsa da ekran kalabalıklaşmaz).
  */
 function EksikListe({ eksik, acik, onKlasorSec }: { eksik: DesteklenenOyun[]; acik: boolean; onKlasorSec: (kimlik: string) => void }) {
   return (
@@ -85,10 +73,7 @@ function EksikListe({ eksik, acik, onKlasorSec }: { eksik: DesteklenenOyun[]; ac
       <summary>
         Bilgisayarında bulunamayan Türkçesi hazır oyunlar <span className="sayac">{eksik.length}</span>
       </summary>
-      <p className="soluk eksik-aciklama">
-        Steam ya da Epic Games dışından kurduysan klasörünü göster: oyunun klasöründe yanında yazan dosyalar bulunur. Steam&apos;de oyuna sağ tıkla → Yönet →
-        Yerel dosyalara göz at ile klasörü bulabilirsin; üst klasörü (ör. <code>SteamLibrary</code>) seçersen içinde kendim ararım.
-      </p>
+      <p className="soluk eksik-aciklama">Oyunu Steam ya da Epic dışından kurduysan klasörünü seç; üst klasörü seçersen içinde kendim ararım.</p>
       <div className="eksik-satirlar">
         {eksik.map((d) => (
           <EksikSatir key={d.kimlik} d={d} onKlasorSec={onKlasorSec} />
@@ -126,6 +111,8 @@ export function Oyunlarim(p: {
   onKlasorSec: (kimlik?: string) => void;
   /** Steam ve Epic'i yeniden tarar (yeni kurulan oyunlar için). */
   onYenile?: () => void;
+  /** Canlı Çeviri sayfasına gider. */
+  onCanliyaGit?: () => void;
 }) {
   const [arama, setArama] = useState("");
   const [platform, setPlatform] = useState<"hepsi" | "steam" | "epic">("hepsi");
@@ -219,9 +206,18 @@ export function Oyunlarim(p: {
               ))}
             </div>
           ) : (
-            <p className="soluk bolum-aciklama">Bilgisayarında Türkçesi hazır bir oyun bulunamadı. Aşağıdaki listeden oyununu seçebilirsin.</p>
+            <div className="kompakt-kutu">
+              <span className="soluk">
+                {`Bilgisayarında Türkçesi hazır bir oyun bulunamadı.${eksik.length > 0 ? ` Türkçesi hazır oyunlar: ${eksik.map((d) => d.ad).join(", ")}.` : ""}`}
+              </span>
+              {p.onCanliyaGit && (
+                <Dugme tur="ikincil" onClick={p.onCanliyaGit}>
+                  Başka oyunlar için Canlı Çeviri
+                </Dugme>
+              )}
+            </div>
           )}
-          {eksik.length > 0 && <EksikListe eksik={eksik} acik={hazir.length === 0 || aranan !== ""} onKlasorSec={p.onKlasorSec} />}
+          {eksik.length > 0 && <EksikListe eksik={eksik} acik={aranan !== ""} onKlasorSec={p.onKlasorSec} />}
         </section>
       )}
 
@@ -233,6 +229,14 @@ export function Oyunlarim(p: {
           <p className="soluk bolum-aciklama">
             Türkçesi Var oyunları kendi başına çevirmez; yalnızca Türkçesi hazırlanmış oyunlara yama kurar. Bu oyunların Türkçesi henüz yok
             ya da hile koruması olduğu için dokunulmuyor. Yeni oyunlar uygulama güncellendikçe eklenir; en çok istenenler önce gelir.{" "}
+            {p.onCanliyaGit && (
+              <>
+                Türkçesi olmayan oyunları Canlı Çeviri ile oynayabilirsin.{" "}
+                <Dugme tur="sade" onClick={p.onCanliyaGit}>
+                  Canlı Çeviri
+                </Dugme>
+              </>
+            )}
             <Dugme tur="sade" simge="sohbet" onClick={() => void window.tv.disBaglanti(DISCORD_ADRESI)}>
               Discord&apos;da oyun iste
             </Dugme>

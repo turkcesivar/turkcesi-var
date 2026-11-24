@@ -60,14 +60,55 @@ describe("Oyunlarım", () => {
     expect(disBaglanti).toHaveBeenLastCalledWith("https://github.com/turkcesivar/turkcesi-var/issues/new?template=oyun-istegi.yml");
   });
 
-  it("desteklenen oyun bulunamazsa hangi dosyaların aranacağını gösterir ve klasör seçtirir", () => {
+  it("desteklenen oyun bulunamazsa klasör seçtirir; ad sade, dosyalar ve yol düğmenin title'ında", () => {
     render(<Oyunlarim {...ortak} oyunlar={[]} durumlar={{}} steamBulundu={false} />);
     const kart = screen.getByRole("group", { name: /Metro 2033 Redux — bilgisayarında bulunamadı/ });
-    for (const f of ["metro.exe", "content.vfx", "2033"]) expect(within(kart).getByText(f)).toBeTruthy();
-    expect(within(kart).getByText(/steamapps\\common\\Metro 2033 Redux/)).toBeTruthy();
+    expect(within(kart).queryByText("metro.exe")).toBeNull();
+    expect(within(kart).queryByText(/steamapps/)).toBeNull();
     fireEvent.click(within(kart).getByRole("button", { name: /Klasörü seç/ }));
     expect(ortak.onKlasorSec).toHaveBeenCalledWith("metro2033redux");
     expect(screen.getByText(/Steam ya da Epic Games'te kurulu oyun bulunamadı/)).toBeTruthy();
+  });
+
+  it("klasor_sec_ipucu_title: düğmenin title'ı dosyaları ve Steam yolunu içerir", () => {
+    render(<Oyunlarim {...ortak} oyunlar={[]} durumlar={{}} />);
+    const t = screen.getByRole("button", { name: /Klasörü seç/ }).getAttribute("title") ?? "";
+    expect(t).toContain("Klasörde şu dosyalar bulunur: metro.exe, content.vfx, 2033");
+    expect(t).toContain("steamapps\\common\\Metro 2033 Redux");
+  });
+
+  it("hazir_yokken_liste_kapali: liste kapalı, rozet ve yol metni görünmez", () => {
+    const { container } = render(<Oyunlarim {...ortak} oyunlar={[]} durumlar={{}} />);
+    expect((container.querySelector("details.eksik-liste") as HTMLDetailsElement).open).toBe(false);
+    expect(screen.queryByText("Bilgisayarında bulunamadı")).toBeNull();
+    expect(screen.queryByText(/steamapps/)).toBeNull();
+    expect(screen.getByText(/Oyunu Steam ya da Epic dışından kurduysan klasörünü seç; üst klasörü seçersen içinde kendim ararım\./)).toBeTruthy();
+  });
+
+  it("aramada_liste_acik: arama yapılınca liste açılır", () => {
+    const { container } = render(<Oyunlarim {...ortak} oyunlar={[]} durumlar={{}} />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "metro" } });
+    expect((container.querySelector("details.eksik-liste") as HTMLDetailsElement).open).toBe(true);
+  });
+
+  it("hazir_yokken_kompakt_ozet: tek satır özet; Canlı Çeviri düğmesi yönlendirir", () => {
+    const onCanliyaGit = vi.fn();
+    render(<Oyunlarim {...ortak} oyunlar={[]} durumlar={{}} onCanliyaGit={onCanliyaGit} />);
+    expect(screen.getByText("Bilgisayarında Türkçesi hazır bir oyun bulunamadı. Türkçesi hazır oyunlar: Metro 2033 Redux.")).toBeTruthy();
+    const bolum = screen.getByRole("region", { name: "Türkçesi hazır" });
+    fireEvent.click(within(bolum).getByRole("button", { name: "Başka oyunlar için Canlı Çeviri" }));
+    expect(onCanliyaGit).toHaveBeenCalledTimes(1);
+  });
+
+  it("onCanliyaGit yoksa Canlı Çeviri düğmesi çıkmaz; Diğer oyunlarda varsa çıkar", () => {
+    const { rerender } = render(<Oyunlarim {...ortak} oyunlar={[oyun("GodOfWar", "desteklenmiyor")]} durumlar={{}} />);
+    expect(screen.queryByRole("button", { name: /Canlı Çeviri/ })).toBeNull();
+    const onCanliyaGit = vi.fn();
+    rerender(<Oyunlarim {...ortak} oyunlar={[oyun("GodOfWar", "desteklenmiyor")]} durumlar={{}} onCanliyaGit={onCanliyaGit} />);
+    const diger = screen.getByRole("region", { name: "Diğer oyunlar" });
+    expect(within(diger).getByText(/Türkçesi olmayan oyunları Canlı Çeviri ile oynayabilirsin\./)).toBeTruthy();
+    fireEvent.click(within(diger).getByRole("button", { name: "Canlı Çeviri" }));
+    expect(onCanliyaGit).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -155,11 +196,11 @@ describe("Uygulama", () => {
       guncellemeDinle: vi.fn(() => () => {}),
     };
     render(<Uygulama />);
-    expect(await screen.findByText("Bilgisayarında bulunamadı")).toBeTruthy();
+    expect(await screen.findByText(/Bilgisayarında Türkçesi hazır bir oyun bulunamadı/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Yenile" }));
     expect(await screen.findByText("1 yeni oyun bulundu: Metro 2033 Redux")).toBeTruthy();
     expect(oyunlariTara).toHaveBeenCalledTimes(2);
-    expect(screen.queryByText("Bilgisayarında bulunamadı")).toBeNull();
+    expect(screen.queryByText(/Bilgisayarında Türkçesi hazır bir oyun bulunamadı/)).toBeNull();
   });
 
   it("Güncellemeleri denetle: güncelse bildirir, yeni sürüm varsa 'Güncelleme var' penceresi açılır", async () => {

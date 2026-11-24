@@ -1614,22 +1614,12 @@ h3 {
   margin: 0 16px 10px;
   font-size: 13px;
 }
-.eksik-aciklama code,
-.eksik-satir code {
-  font-family: "Cascadia Mono", Consolas, monospace;
-  font-size: 11.5px;
-  padding: 1px 6px;
-  border-radius: 5px;
-  background: var(--zemin);
-  border: 1px solid var(--cizgi);
-  color: var(--metin);
-}
 .eksik-satirlar {
   border-top: 1px solid var(--cizgi);
 }
 .eksik-satir {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-columns: minmax(220px, 1fr) auto;
   align-items: center;
   gap: 14px;
   padding: 10px 16px;
@@ -1639,20 +1629,19 @@ h3 {
   border-bottom: 0;
 }
 .eksik-satir-ad {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   font-weight: 600;
 }
-.eksik-satir .dosyalar {
+.kompakt-kutu {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-}
-.eksik-yol {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid var(--cizgi);
+  border-radius: 12px;
+  background: var(--yuzey);
+  font-size: 13px;
 }
 
 /* ---------- bildirim (tost): yumuşak giriş/çıkış, kalan süre çizgisi ---------- */
