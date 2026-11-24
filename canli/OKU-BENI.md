@@ -19,3 +19,35 @@ Girdi komutları: `basla` (lisans, oyun, oyunAdi, profil, sureciAdi), `duraklat`
 Çıktı olayları: `hazir`, `basladi`, `durdu`, `kalan`, `uyari`, `hata`. Geçersiz bir satır `{"olay":"hata","kod":"gecersiz_komut"}` döndürür. stdout'a bu kanal dışında hiçbir şey yazılmaz.
 
 Komut satırından deneme: `canli.exe --lisans K --oyun ID --oyunAdi AD [--renk sari] [--bolge x,y,g,y2] [--ek x,y,g,y2] [--surec Oyun.exe] [--tani]`
+
+## Tanı kaydı
+
+`--tani` (ya da `basla` komutunda `"tani": true`) verilirse her olay
+`%LOCALAPPDATA%\TurkcesiVar\canli\tani\<yyyyMMdd-HHmmss>.jsonl` dosyasına bir JSON satırı olarak yazılır
+(`t` = oturum başından ms). Olaylar: `basladi`, `altyazi` (`en`, `ocrMs`, `istekMs`, `toplamMs`,
+`kaynak` = yerel/bellek/model/okunamaz, `hata`), `menu_okundu`, `menu_atlandi`, `menu_ceviri`, `ek_okundu`,
+`sunucu_hatasi`, `arkada`, `duraklat`, `devam`, `menu_kapandi`, `durdu`. Kayıt stdout protokolüne karışmaz.
+
+## Ölçümler
+
+**Mafia: The Old Country, 24 Kasım 2026** (pencereli tam ekran, sarı altyazı, sol üst ek bölge; 7,8 dk,
+deneme lisansıyla, sunucu üzerinden). Karşılaştırma: fizibilite denemesi (doğrudan API, sunucusuz).
+
+| Ölçüm | canli.exe (sunucu) | Fizibilite |
+|---|---|---|
+| Altyazı: İngilizce okunmasından Türkçenin gelmesine (medyan) | 1,66 sn (en az 1,47, en çok 1,86) | 1,37 sn |
+| Altyazı: ekran okuma (OCR, medyan) | 30 ms | — |
+| Altyazı: istek süresi (medyan) | 1,63 sn | 1,26 sn |
+| Altyazı satırı: çevrilen / hata | 20 / 0 (2 "okunamaz", 1 yerel bellek) | 44 / 0 |
+| Menü ekranı: tam ekran OCR (medyan) | 227 ms | 185 ms |
+| Menü: yeni satırların gelmesi (medyan) | 2,0 sn; bilinen satırlar OCR ile birlikte (~0,2 sn) | 1,35 sn |
+| Menü satırı: okunan / bellekten | 306 / 162 | — |
+| Ek bölge (görev yazısı) çevirisi (medyan) | 1,15 sn | — |
+| Sunucu hatası | 1 (`hiz`, art arda açılan menü ekranlarında; sonraki istekler düzeldi) | — |
+
+Kullanıcı yorumu: "gayet iyi çalışıyor". Bulunan tek görsel sorun: notlardaki uzun Türkçe cümleler alt
+satıra geçmeyip ekran dışına taşıyordu → düzeltildi (menü katmanı ekran kenarında satır kaydırır).
+
+Sonuç: OCR ve çizim hızlı; gecikmenin tamamına yakını sunucu isteği. Altyazı medyanı hedefin (≤1,5 sn)
+biraz üstünde; iyileştirme sunucu tarafında yapılacak (istek başına ek yükün azaltılması, menü isteklerinin
+hız sınırına takılmaması).
