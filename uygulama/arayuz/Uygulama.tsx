@@ -11,13 +11,14 @@ import { Simge, type SimgeAdi } from "./bilesenler/Simge.js";
 import { Dugme } from "./bilesenler/temel.js";
 import { turkceHata } from "./hata.js";
 import { calistirici, type Calistir, type Mesaj } from "./islem.js";
+import { CanliCeviri } from "./sayfalar/CanliCeviri.js";
 import { Hakkinda, guncellemeHatasiMetni } from "./sayfalar/Hakkinda.js";
 import { Oyunlarim, oyunAnahtari } from "./sayfalar/Oyunlarim.js";
 import { OyunSayfasi } from "./sayfalar/OyunSayfasi.js";
 
 export type { Mesaj } from "./islem.js";
 
-type Sayfa = { ad: "oyunlar" } | { ad: "oyun"; oyun: ArayuzOyunu } | { ad: "hakkinda" };
+type Sayfa = { ad: "oyunlar" } | { ad: "oyun"; oyun: ArayuzOyunu } | { ad: "canli" } | { ad: "hakkinda" };
 
 export function Logo() {
   return (
@@ -187,6 +188,12 @@ export function Uygulama() {
     }
   };
 
+  /** Canlı Çeviri'deki "Türkçe yap": taranmış oyunlarda kimliği bulup sayfasını açar; yoksa Oyunlarım. */
+  const canliOyunaGit = (kimlik: string) => {
+    const o = oyunlar.find((x) => x.kimlik === kimlik);
+    setSayfa(o ? { ad: "oyun", oyun: o } : { ad: "oyunlar" });
+  };
+
   let icerik: React.ReactNode;
   if (sayfa.ad === "oyunlar") {
     icerik = (
@@ -201,6 +208,8 @@ export function Uygulama() {
         onYenile={() => void oyunlariYenile()}
       />
     );
+  } else if (sayfa.ad === "canli") {
+    icerik = <CanliCeviri onOyunaGit={canliOyunaGit} />;
   } else if (sayfa.ad === "hakkinda") {
     icerik = <Hakkinda surum={surum} guncelleme={guncelleme} denetleniyor={denetleniyor} onDenetle={() => void guncellemeDenetle()} onKur={guncellemeKur} onIndir={guncellemeIndir} />;
   } else {
@@ -225,7 +234,8 @@ export function Uygulama() {
       <nav className="yan-menu" aria-label="Ana menü">
         <Logo />
         <div className="menu-liste">
-          <MenuDugmesi simge="oyunlar" ad="Oyunlarım" secili={sayfa.ad !== "hakkinda"} onClick={() => setSayfa({ ad: "oyunlar" })} />
+          <MenuDugmesi simge="oyunlar" ad="Oyunlarım" secili={sayfa.ad === "oyunlar" || sayfa.ad === "oyun"} onClick={() => setSayfa({ ad: "oyunlar" })} />
+          <MenuDugmesi simge="canli" ad="Canlı Çeviri" secili={sayfa.ad === "canli"} onClick={() => setSayfa({ ad: "canli" })} />
           <MenuDugmesi simge="bilgi" ad="Hakkında" secili={sayfa.ad === "hakkinda"} onClick={() => setSayfa({ ad: "hakkinda" })} />
         </div>
         <div className="menu-alt">

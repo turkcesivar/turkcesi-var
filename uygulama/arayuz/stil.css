@@ -1730,3 +1730,116 @@ h3 {
     transform: translateY(6px) scale(0.97);
   }
 }
+
+/* ---------- canlı çeviri ---------- */
+.canli-icerik {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.canli-fark {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.canli-fark-kutu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--zemin);
+  border: 1px solid var(--cizgi);
+}
+.canli-fark-kutu:first-child {
+  border-color: rgba(82, 201, 138, 0.4);
+}
+.canli-fark-kutu:last-child {
+  border-color: rgba(242, 194, 48, 0.4);
+}
+.canli-fark-kutu p {
+  margin: 0;
+  color: var(--metin-2);
+}
+.canli-sinirlar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.canli-sinirlar h3 {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--metin-2);
+}
+.canli-sinirlar p {
+  margin: 0;
+}
+.canli-pencere {
+  width: min(680px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+.canli-nasil summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.canli-nasil[open] summary {
+  margin-bottom: 14px;
+}
+.canli-cubuk {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.canli-cubuk-ust {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--metin-2);
+}
+.canli-cubuk-ust strong {
+  color: var(--metin);
+}
+.canli-durum {
+  margin: 0;
+}
+.canli-numara {
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: var(--vurgu);
+}
+.canli-davet {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 44px 12px 16px;
+  border-radius: 12px;
+  background: var(--vurgu-zemin);
+  border: 1px solid rgba(242, 194, 48, 0.35);
+}
+.canli-davet span {
+  flex: 1 1 260px;
+}
+.canli-kapat {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--soluk);
+  cursor: pointer;
+}
+.canli-kapat:hover {
+  color: var(--metin);
+  background: var(--yuzey-2);
+}
