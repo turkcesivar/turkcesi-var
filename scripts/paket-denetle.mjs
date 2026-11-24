@@ -11,6 +11,11 @@ if (!existsSync(join(app, "package.json"))) {
   process.exit(2);
 }
 
+if (!existsSync(join(kaynaklar, "canli", "canli.exe"))) {
+  console.error(`canli.exe pakette yok: ${join(kaynaklar, "canli", "canli.exe")}`);
+  process.exit(2);
+}
+
 // Node'un çözümleme kuralı: modülün kendi node_modules'ı, sonra üst klasörlerinkiler.
 function bul(ad, klasor) {
   for (let k = klasor; k.startsWith(app); k = join(k, "..", "..")) {

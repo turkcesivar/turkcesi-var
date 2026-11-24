@@ -2,6 +2,7 @@
 
 import { contextBridge, ipcRenderer } from "electron";
 import type { GuncellemeDurumu, TvApi } from "../../src/servis/api.js";
+import type { CanliDurum } from "../../src/canli/tipler.js";
 import type { Ilerleme } from "../../src/servis/tipler.js";
 
 let sayac = 0;
@@ -10,6 +11,9 @@ ipcRenderer.on("tv:ilerleme", (_e, kimlik: number, i: Ilerleme) => dinleyiciler.
 
 const guncellemeDinleyicileri = new Set<(d: GuncellemeDurumu) => void>();
 ipcRenderer.on("tv:guncelleme", (_e, d: GuncellemeDurumu) => guncellemeDinleyicileri.forEach((f) => f(d)));
+
+const canliDinleyicileri = new Set<(d: CanliDurum) => void>();
+ipcRenderer.on("tv:canli", (_e, d: CanliDurum) => canliDinleyicileri.forEach((f) => f(d)));
 
 async function cagir<T>(yontem: string, argumanlar: unknown[], ilerleme?: (i: Ilerleme) => void): Promise<T> {
   const kimlik = ilerleme ? ++sayac : undefined;
@@ -38,6 +42,16 @@ const tv: TvApi = {
   guncellemeDenetle: () => ipcRenderer.invoke("tv:guncellemeDenetle"),
   disBaglanti: (url) => ipcRenderer.invoke("tv:disBaglanti", url),
   surum: () => ipcRenderer.invoke("tv:surum"),
+  canliDurum: () => ipcRenderer.invoke("tv:canliDurum"),
+  canliDinle: (f) => {
+    canliDinleyicileri.add(f);
+    return () => canliDinleyicileri.delete(f);
+  },
+  canliYenile: () => ipcRenderer.invoke("tv:canliYenile"),
+  canliDeneme: () => ipcRenderer.invoke("tv:canliDeneme"),
+  canliEslestir: () => ipcRenderer.invoke("tv:canliEslestir"),
+  canliBaslat: () => ipcRenderer.invoke("tv:canliBaslat"),
+  canliDurdur: () => ipcRenderer.invoke("tv:canliDurdur"),
 };
 
 contextBridge.exposeInMainWorld("tv", tv);

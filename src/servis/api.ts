@@ -3,6 +3,7 @@
 
 import type { BulunanOyun } from "../oyunlar/steam.js";
 import type { GuncellemeHatasiNedeni } from "../ortak/guncelleme-hata.js";
+import type { CanliDurum } from "../canli/tipler.js";
 import type { Ilerleme, OyunDurumu } from "./tipler.js";
 
 /** Arayüze giden oyun: görseller `tv-gorsel://` adresleri olarak, tanım yerine kimlik. */
@@ -55,6 +56,13 @@ export interface TvApi {
   guncellemeDenetle(): Promise<GuncellemeDurumu>;
   disBaglanti(url: string): Promise<void>;
   surum(): Promise<string>;
+  canliDurum(): Promise<CanliDurum>;
+  canliDinle(f: (d: CanliDurum) => void): () => void;
+  canliYenile(): Promise<void>;
+  canliDeneme(): Promise<{ hata?: string }>;
+  canliEslestir(): Promise<{ hata?: string }>;
+  canliBaslat(): Promise<void>;
+  canliDurdur(): Promise<void>;
 }
 
 /** tv:cagir ile çağrılabilen servis yöntemleri (beyaz liste). */

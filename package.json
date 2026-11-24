@@ -12,7 +12,7 @@
     "uygulama": "electron-vite dev",
     "uygulama:derle": "electron-vite build",
     "uygulama:onizle": "electron-vite preview",
-    "exe": "node scripts/kosullar-txt.mjs && electron-vite build && electron-builder --win nsis --x64 --publish never && node scripts/paket-denetle.mjs && node scripts/zip-yap.mjs"
+    "exe": "powershell -NoProfile -ExecutionPolicy Bypass -File canli/derle.ps1 && node scripts/kosullar-txt.mjs && electron-vite build && electron-builder --win nsis --x64 --publish never && node scripts/paket-denetle.mjs && node scripts/zip-yap.mjs"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
@@ -50,6 +50,15 @@
       "package.json"
     ],
     "extraResources": [
+      {
+        "from": "canli/cikti",
+        "to": "canli",
+        "filter": [
+          "**/*",
+          "!*.pdb",
+          "!*.xml"
+        ]
+      },
       {
         "from": "paketler",
         "to": "paketler",

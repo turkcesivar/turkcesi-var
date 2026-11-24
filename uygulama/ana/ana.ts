@@ -1,7 +1,7 @@
 // Electron ana süreci (oyuncu sürümü): pencere, güvenli köprü (IPC), oyun bulma/elle seçme,
 // oyun görselleri, arka plan servisi ve otomatik güncelleme.
 
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, net, protocol, safeStorage, shell } from "electron";
 import { realpathSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -14,6 +14,11 @@ import { SERVIS_YONTEMLERI, type ArayuzOyunu, type GuncellemeDurumu, type Tarama
 import { servisIstemcisi, type ServisIstemcisi } from "../../src/servis/is-parcacigi-istemci.js";
 import workerYolu from "../../src/servis/is-parcacigi.ts?modulePath";
 import { guncellemeyiBaslat } from "./guncelleme.js";
+import { cihazOzeti, makineGuidOku } from "../../src/canli/cihaz.js";
+import { LisansDeposu } from "../../src/canli/lisans-deposu.js";
+import { CanliSunucu } from "../../src/canli/sunucu.js";
+import { CanliYonetici } from "../../src/canli/yonetici.js";
+import { canliExeYolu, canliSurecBaslat, gercekSifreleyici, surecAcikMiAsenkron } from "./canli.js";
 
 const burasi = dirname(fileURLToPath(import.meta.url));
 const KLASOR = uygulamaKlasoru();
@@ -34,6 +39,29 @@ const taranan = new Map<string, Set<string>>();
 const YAZAN = new Set(["turkceYap", "kaldir"]);
 let yaziyor = 0;
 let kapanmaBekliyor = false;
+/** Son tarama listesi (Canlı Çeviri yöneticisi oyunları buradan tanır). */
+let sonListe: ArayuzOyunu[] = [];
+/** Cihaz özeti açılışta bir kez hesaplanır; işleyiciler hazır olmadan gelen çağrıyı bu söz bekletir. */
+let canliHazir: Promise<CanliYonetici>;
+let canliYonetici: CanliYonetici | undefined;
+
+function canliKur(): Promise<CanliYonetici> {
+  return makineGuidOku().then((guid) => {
+    const y = new CanliYonetici({
+      sunucu: new CanliSunucu({ taban: "https://api.turkcesivar.com", cihaz: cihazOzeti(guid) }),
+      depo: new LisansDeposu(join(KLASOR, "canli-lisans.json"), gercekSifreleyici(safeStorage)),
+      baslat: () => canliSurecBaslat(canliExeYolu(gelistirme, app.getAppPath(), process.resourcesPath)),
+      oyunlar: () => sonListe,
+      surecAcikMi: surecAcikMiAsenkron,
+      ...(!app.isPackaged && process.env.TV_CANLI_TEST_OYUNU ? { testOyunu: process.env.TV_CANLI_TEST_OYUNU } : {}),
+    });
+    y.dinle((d) => {
+      if (pencere && !pencere.webContents.isDestroyed()) pencere.webContents.send("tv:canli", d);
+    });
+    canliYonetici = y;
+    return y;
+  });
+}
 
 /** Pencere ve görev çubuğu simgesi (kurulumda resources\simge.ico). */
 const SIMGE = gelistirme ? join(app.getAppPath(), "build", "simge.ico") : join(process.resourcesPath, "simge.ico");
@@ -130,6 +158,7 @@ async function tara(): Promise<TaramaSonucu> {
   }
   taranan.clear();
   for (const [k, v] of yeni) taranan.set(k, v);
+  sonListe = bulunan;
   return {
     oyunlar: bulunan,
     desteklenenler: OYUNLAR.map((t) => ({ kimlik: t.kimlik, ad: t.ad, klasorAdi: t.klasorAdi, tanimaDosyalari: t.tanimaDosyalari })),
@@ -239,6 +268,13 @@ function ipcKur() {
   });
   ipcMain.handle("tv:disBaglanti", (_e, url: string) => (url.startsWith("https://") ? shell.openExternal(url) : undefined));
   ipcMain.handle("tv:surum", () => app.getVersion());
+
+  ipcMain.handle("tv:canliDurum", async () => (await canliHazir).durum());
+  ipcMain.handle("tv:canliYenile", async () => (await canliHazir).yenile());
+  ipcMain.handle("tv:canliDeneme", async () => (await canliHazir).deneme());
+  ipcMain.handle("tv:canliEslestir", async () => (await canliHazir).eslestirBaslat());
+  ipcMain.handle("tv:canliBaslat", async () => (await canliHazir).calistir());
+  ipcMain.handle("tv:canliDurdur", async () => (await canliHazir).durdur());
 }
 
 void app.whenReady().then(() => {
@@ -263,8 +299,16 @@ void app.whenReady().then(() => {
   guncelleme = guncellemeyiBaslat(app.isPackaged, (d: GuncellemeDurumu) => {
     if (pencere && !pencere.webContents.isDestroyed()) pencere.webContents.send("tv:guncelleme", d);
   });
+  canliHazir = canliKur();
+  canliHazir.catch(() => {
+    // cihaz kimliği okunamazsa Canlı Çeviri kullanılamaz; uygulamanın geri kalanı etkilenmez
+  });
   ipcKur();
   pencereAc();
+});
+
+app.on("before-quit", () => {
+  canliYonetici?.kapat();
 });
 
 app.on("window-all-closed", () => {
