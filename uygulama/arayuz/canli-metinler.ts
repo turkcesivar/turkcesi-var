@@ -4,11 +4,11 @@ export const NASIL_BASLIK = "Canlı çeviri nasıl çalışır?";
 
 export const FARK = [
   {
-    baslik: "Türkçe paket (ücretsiz):",
+    baslik: "Türkçe paket (ücretsiz)",
     metin: "Oyunun kendi dosyaları çevrilir. Her yazı oyunun kendi yazı tipiyle, yerli yerinde ve baştan sona Türkçedir. Türkçesi hazır oyunlarda her zaman bunu kullan.",
   },
   {
-    baslik: "Canlı çeviri:",
+    baslik: "Canlı çeviri",
     metin: "Ekrandaki İngilizce yazıyı okur, internetten anında çevirtir ve Türkçesini İngilizcenin üstüne yazar. Oyunun dosyalarına dokunmaz.",
   },
 ] as const;
@@ -61,6 +61,7 @@ const KODLAR: Record<string, string> = {
   lisans_yok: "Lisans bulunamadı.",
   deneme_kullanildi: "Bu bilgisayarda deneme daha önce kullanılmış.",
   deneme_siniri: "Bugün bu bağlantıdan çok fazla deneme başlatıldı; yarın yeniden dene.",
+  cihaz: "Bu bilgisayarın kimliği okunamadı; canlı çeviri şu an kullanılamıyor.",
   kayit: "Lisans bu bilgisayara kaydedilemedi. Lütfen Discord'dan bize yaz; lisansını elle bağlayalım.",
 };
 

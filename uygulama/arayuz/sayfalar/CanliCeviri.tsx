@@ -176,7 +176,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
     govde = (
       <Bildirim tur="uyari">
         <p>Sunucuya ulaşılamıyor. İnternet bağlantını kontrol edip yeniden dene.</p>
-        {d.sunucuHatasi && <p className="soluk">{kodMetni(d.sunucuHatasi)}</p>}
+        {d.sunucuHatasi && d.sunucuHatasi !== "cevrimdisi" && <p className="soluk">{kodMetni(d.sunucuHatasi)}</p>}
         <div className="eylemler">
           <Dugme simge="yenile" onClick={yenidenDene}>
             Yeniden dene
@@ -187,6 +187,14 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
   } else if (d.lisans.durum === "lisanssiz" || d.lisans.durum === "suresi_bitti") {
     const l = d.lisans;
     const kod = hata ?? d.sunucuHatasi;
+    // Süresi biten deneme yeniden denenemez (sunucu 409 döner).
+    const denemeOlur = !(l.durum === "suresi_bitti" && l.tur === "deneme");
+    const denemeDugmesi = (tur: "ana" | "ikincil") =>
+      denemeOlur && (
+        <Dugme tur={tur} buyuk simge="canli" pasif={isleniyor} onClick={() => setOnay(true)}>
+          7 gün ücretsiz dene
+        </Dugme>
+      );
     govde = (
       <>
         {onay && (
@@ -225,24 +233,25 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
           </h2>
           <p>Türkçesi olmayan oyunları, ekrandaki yazıyı anında çevirerek beklemeden oynamanı sağlar.</p>
           {d.eslesme ? (
-            <div className="canli-eslesme">
-              <p>
-                Eşleştirme numaran: <strong className="canli-numara">{d.eslesme.numara}</strong> — Kreosus&apos;ta destek olurken bu numarayı mesaj kısmına yaz. {ESLESTIRME_ACIKLAMA_SON}
-              </p>
-              <div className="eylemler">
-                <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
-                  Kreosus&apos;u aç
-                </Dugme>
-                <Dugme tur="ikincil" simge="sohbet" onClick={() => ac(DISCORD_ADRESI)}>
-                  Discord&apos;da destek ol
-                </Dugme>
+            <>
+              <div className="canli-eslesme">
+                <p>
+                  Eşleştirme numaran: <strong className="canli-numara">{d.eslesme.numara}</strong> — Kreosus&apos;ta destek olurken bu numarayı mesaj kısmına yaz. {ESLESTIRME_ACIKLAMA_SON}
+                </p>
+                <div className="eylemler">
+                  <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
+                    Kreosus&apos;u aç
+                  </Dugme>
+                  <Dugme tur="ikincil" simge="sohbet" onClick={() => ac(DISCORD_ADRESI)}>
+                    Discord&apos;da destek ol
+                  </Dugme>
+                </div>
               </div>
-            </div>
+              {denemeOlur && <div className="eylemler">{denemeDugmesi("ikincil")}</div>}
+            </>
           ) : (
             <div className="eylemler">
-              <Dugme tur="ana" buyuk simge="canli" pasif={isleniyor} onClick={() => setOnay(true)}>
-                7 gün ücretsiz dene
-              </Dugme>
+              {denemeDugmesi("ana")}
               <Dugme tur="ikincil" buyuk simge="kalp" pasif={isleniyor} onClick={() => void islem(() => window.tv.canliEslestir())}>
                 Destek ol ve etkinleştir
               </Dugme>
@@ -265,6 +274,10 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
     const acik = d.calisma !== "kapali";
     const sorun = d.uyari ?? d.hata ?? d.sunucuHatasi;
     const gunBitti = l.gunKalan === 0;
+    const hakBlogu = l.durum === "hak_bitti";
+    const gunBlogu = !hakBlogu && gunBitti;
+    // Aynı uyarı aşağıdaki özel blokta gösteriliyorsa sorun bandında tekrarlanmaz.
+    const sorunGoster = !!sorun && !((sorun === "hak_bitti" && hakBlogu) || (sorun === "gun_bitti" && gunBlogu));
     govde = (
       <>
         {tur === "deneme" && !denemeKartiKapali && (
@@ -284,7 +297,8 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             {l.donemBitis && <span className="surum">{new Date(l.donemBitis).toLocaleDateString("tr-TR")} tarihine kadar</span>}
           </h2>
           <Cubuk etiket="Bu dönem kalan yeni satır" kalan={l.kalan ?? 0} tavan={tavan.ay} />
-          <Cubuk etiket="Bugün kalan" kalan={l.gunKalan ?? 0} tavan={tavan.gun} />
+          {/* Denemede günlük sınır dönem sınırına eşit; günlük kalan bilinmiyorsa çubuk gösterilmez. */}
+          {tur !== "deneme" && l.gunKalan !== undefined && <Cubuk etiket="Bugün kalan" kalan={l.gunKalan} tavan={tavan.gun} />}
           <div className="eylemler">
             {acik ? (
               <Dugme tur="tehlike" buyuk onClick={() => void window.tv.canliDurdur()}>
@@ -310,12 +324,19 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             )}
           </Bildirim>
         )}
-        {sorun && (
+        {sorun && sorunGoster && (
           <Bildirim tur="uyari">
             <p>{kodMetni(sorun)}</p>
+            {sorun === "kayit" && (
+              <div className="eylemler">
+                <Dugme simge="sohbet" onClick={() => ac(DISCORD_ADRESI)}>
+                  Discord&apos;a yaz
+                </Dugme>
+              </div>
+            )}
           </Bildirim>
         )}
-        {l.durum === "hak_bitti" && (
+        {hakBlogu && (
           <Bildirim tur="uyari">
             <p>{HAK_BITTI}</p>
             <div className="eylemler">
@@ -325,7 +346,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             </div>
           </Bildirim>
         )}
-        {l.durum !== "hak_bitti" && gunBitti && (
+        {gunBlogu && (
           <Bildirim tur="uyari">
             <p>{GUN_BITTI}</p>
             <div className="eylemler">

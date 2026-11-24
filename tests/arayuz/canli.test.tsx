@@ -106,10 +106,96 @@ describe("Canlı Çeviri sayfası", () => {
   });
 
   it("canliDurum_reddedilirse_cihaz_hatasi_ve_yeniden_dene", async () => {
-    kur(taban, { canliDurum: vi.fn(() => Promise.reject(new Error("x"))) });
+    const tv = kur(taban, { canliDurum: vi.fn().mockRejectedValueOnce(new Error("x")).mockResolvedValue(taban) });
     render(<CanliCeviri onOyunaGit={vi.fn()} />);
-    expect(await screen.findByText("Beklenmeyen bir sorun oluştu (cihaz).")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Yeniden dene" })).toBeTruthy();
+    expect(await screen.findByText("Bu bilgisayarın kimliği okunamadı; canlı çeviri şu an kullanılamıyor.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Yeniden dene" }));
+    expect(tv.canliYenile).toHaveBeenCalled();
+    // yeniden deneme başarılı: lisans ekranı gelir
+    expect(await screen.findByRole("button", { name: /7 gün ücretsiz dene/ })).toBeTruthy();
+  });
+
+  it("ilk_yukleniyorken_iskelet_sunucu_hatasi_degil", async () => {
+    const tv = kur({ yukleniyor: true, lisans: null, calisma: "kapali" });
+    const { container } = render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    await waitFor(() => expect(tv.canliDurum).toHaveBeenCalled());
+    await waitFor(() => expect(container.querySelector(".iskelet")).toBeTruthy());
+    expect(screen.queryByText(/Sunucuya ulaşılamıyor/)).toBeNull();
+  });
+
+  it("cevrimdisi_tek_cumle", async () => {
+    kur({ ...taban, lisans: null, sunucuHatasi: "cevrimdisi" });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByText(/Sunucuya ulaşılamıyor\. İnternet/)).toBeTruthy();
+    expect(screen.queryByText(kodMetni("cevrimdisi"))).toBeNull();
+  });
+
+  it("diger_sunucu_hatasi_ek_satirda", async () => {
+    kur({ ...taban, lisans: null, sunucuHatasi: "gecici_hata" });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByText(kodMetni("gecici_hata"))).toBeTruthy();
+  });
+
+  it("deneme_gunluk_cubuk_yok_destekcide_var", async () => {
+    kur({ ...taban, lisans: { durum: "etkin", tur: "deneme", kalan: 2000 } });
+    const ilk = render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    await screen.findByRole("progressbar", { name: "Bu dönem kalan yeni satır" });
+    expect(screen.queryByRole("progressbar", { name: "Bugün kalan" })).toBeNull();
+    ilk.unmount();
+    kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 100 } });
+    const iki = render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    await screen.findByRole("progressbar", { name: "Bu dönem kalan yeni satır" });
+    expect(screen.queryByRole("progressbar", { name: "Bugün kalan" })).toBeNull(); // günlük kalan bilinmiyor
+    iki.unmount();
+    kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 40 } });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByRole("progressbar", { name: "Bugün kalan" })).toBeTruthy();
+  });
+
+  it.each([
+    ["hak_bitti", { durum: "hak_bitti", tur: "destekci", kalan: 0, gunKalan: 100 }, /Bu ayki çeviri hakkın doldu/],
+    ["gun_bitti", { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 0 }, /Bugünkü çeviri hakkın doldu/],
+  ] as const)("%s_uyarisi_bir_kez", async (kod, lisans, metin) => {
+    kur({ ...taban, lisans, hata: kod });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    await screen.findByRole("button", { name: /Canlı Çeviriyi Başlat/ });
+    expect(screen.getAllByText(metin)).toHaveLength(1);
+  });
+
+  it("eslestirme_numarasi_varken_deneme_dugmesi_kalir", async () => {
+    kur({ ...taban, eslesme: { numara: "482913", bitis: Date.now() + 1e6 } });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByText("482913")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /7 gün ücretsiz dene/ })).toBeTruthy();
+  });
+
+  it("suresi_biten_denemede_deneme_dugmesi_yok", async () => {
+    kur({ ...taban, lisans: { durum: "suresi_bitti", tur: "deneme" } });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByRole("button", { name: /Destek ol ve etkinleştir/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /7 gün ücretsiz dene/ })).toBeNull();
+  });
+
+  it("suresi_biten_destekcide_deneme_dugmesi_var", async () => {
+    kur({ ...taban, lisans: { durum: "suresi_bitti", tur: "destekci" } });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByRole("button", { name: /7 gün ücretsiz dene/ })).toBeTruthy();
+  });
+
+  it("kontrol_ekraninda_kayit_hatasi_discord_dugmesi", async () => {
+    const tv = kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 5, gunKalan: 5 }, sunucuHatasi: "kayit" });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByText(/Lisans bu bilgisayara kaydedilemedi/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Discord'a yaz" }));
+    expect(tv.disBaglanti).toHaveBeenCalledWith("https://discord.gg/nnNUCMUBJx");
+  });
+
+  it("fark_kart_basliklari_iki_noktasiz", async () => {
+    kur(taban);
+    const { container } = render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    await screen.findByText(/Her şey çevrilmez/);
+    const basliklar = [...container.querySelectorAll(".canli-fark-kutu strong")].map((b) => b.textContent);
+    expect(basliklar).toEqual(["Türkçe paket (ücretsiz)", "Canlı çeviri"]);
   });
 
   it("kayit_hatasi_discord_dugmesi", async () => {
