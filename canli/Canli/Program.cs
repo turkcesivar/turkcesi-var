@@ -24,6 +24,7 @@ namespace Canli
         private static Calistirici _calistirici;
         private static DosyaTani _tani;
         private static volatile bool _cikIstendi;
+        private static System.Windows.Forms.Timer _izleZamanlayici;
 
         [STAThread]
         private static int Main(string[] args)
@@ -128,6 +129,15 @@ namespace Canli
                 case "devam":
                     if (_calistirici != null) _calistirici.Devam();
                     break;
+                case "izle":
+                    // Bir kez kurulur (tekrarı etkisiz); basla oturumundan bağımsızdır, dur durdurmaz.
+                    if (_izleZamanlayici != null) break;
+                    var izleyici = new Canli.Mantik.OnPlanIzleyici(Canli.Mantik.OnPlanIzleyici.GercekYol, _cikis);
+                    _izleZamanlayici = new System.Windows.Forms.Timer { Interval = 1000 };
+                    _izleZamanlayici.Tick += (s, e) => izleyici.Tik();
+                    _izleZamanlayici.Start();
+                    izleyici.Tik();
+                    break;
                 case "dur":
                     if (_calistirici != null && !_calistirici.Durdu) _calistirici.Dur("komut");
                     else _cikis.Yaz(Protokol.Olay("durdu", ("neden", "komut")));
@@ -176,6 +186,7 @@ namespace Canli
         {
             if (_calistirici != null) { _calistirici.Dispose(); _calistirici = null; }
             TaniKapat();
+            if (_izleZamanlayici != null) { _izleZamanlayici.Stop(); _izleZamanlayici.Dispose(); _izleZamanlayici = null; }
             Application.ExitThread();
         }
     }

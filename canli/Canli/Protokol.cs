@@ -86,7 +86,7 @@ namespace Canli
     {
         public const string GecersizKomut = "gecersiz_komut";
 
-        private static readonly string[] GecerliTurler = { "basla", "duraklat", "devam", "dur", "cik" };
+        private static readonly string[] GecerliTurler = { "basla", "duraklat", "devam", "dur", "cik", "izle" };
 
         private static readonly JsonSerializerOptions YazmaSecenekleri = new JsonSerializerOptions
         {

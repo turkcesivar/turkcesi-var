@@ -14,9 +14,11 @@ powershell -File canli\derle.ps1
 
 ## Protokol özeti (stdin/stdout, satır başına bir JSON, UTF-8)
 
-Girdi komutları: `basla` (lisans, oyun, oyunAdi, profil, sureciAdi), `duraklat`, `devam`, `dur`, `cik`.
+Girdi komutları: `basla` (lisans, oyun, oyunAdi, profil, sureciAdi), `duraklat`, `devam`, `dur`, `cik`, `izle`.
 
-Çıktı olayları: `hazir`, `basladi`, `durdu`, `kalan`, `uyari`, `hata`. Geçersiz bir satır `{"olay":"hata","kod":"gecersiz_komut"}` döndürür. stdout'a bu kanal dışında hiçbir şey yazılmaz.
+Çıktı olayları: `hazir`, `basladi`, `durdu`, `kalan`, `uyari`, `hata`, `onplan`. Geçersiz bir satır `{"olay":"hata","kod":"gecersiz_komut"}` döndürür. stdout'a bu kanal dışında hiçbir şey yazılmaz.
+
+`izle` (bir kez gönderilir, tekrarı etkisizdir): ön plandaki pencerenin süreç yolunu saniyede bir yoklar ve her DEĞİŞTİĞİNDE `{"olay":"onplan","yol":"C:\...\Oyun.exe"}` yazar (yol alınamazsa `"yol":null`). Yalnız süreç yolu okunur, ekran okunmaz. `basla` oturumundan bağımsızdır: `dur` izlemeyi durdurmaz, `cik` kapatır.
 
 `hata` kodları: `ocr_dil_yok`, `gecersiz_komut`, `lisans_yok`, `cihaz_dustu`, `suresi_bitti`, `paketli`, `yasakli`
 (bu beşinde `durdu` nedeni `lisans`), ayrıca `yapilandirma` ve `cihaz_yok` (sunucu yapılandırma/istek hatası) ve
