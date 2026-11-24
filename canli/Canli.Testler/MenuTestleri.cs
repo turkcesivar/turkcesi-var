@@ -227,6 +227,15 @@ namespace Canli.Testler
             Assert.Equal("ikisi", Calistirici.ProfilSec(bos, null).Renk);
         }
 
+        [Fact]
+        public void menu_satiri_ekran_kenarinda_kaydirilir()
+        {
+            // 1920 genişlikte x=1500'deki kutu: sağ kenara 408 px kalır.
+            Assert.Equal(408f, MenuYerlesimi.SatirSiniri(1500, 300, 1920));
+            // Kenara dayanmış kutu kendi genişliğinin altına inmez.
+            Assert.Equal(300f, MenuYerlesimi.SatirSiniri(1800, 300, 1920));
+        }
+
         // ---- Tanı kaydı ----
 
         [Fact]

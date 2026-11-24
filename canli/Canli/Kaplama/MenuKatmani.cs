@@ -14,6 +14,16 @@ namespace Canli.Kaplama
         public string Tr;
     }
 
+    /// <summary>Menü katmanının form dışı (sınanabilir) yerleşim hesabı.</summary>
+    public static class MenuYerlesimi
+    {
+        /// <summary>Kutunun solundan ekranın sağ kenarına (8 px pay) kadar çizilebilecek genişlik; en az kutu genişliği.</summary>
+        public static float SatirSiniri(int kutuX, int kutuGenislik, int ekranGenislik)
+        {
+            return Math.Max(Math.Max(kutuGenislik, 40), ekranGenislik - kutuX - 12);
+        }
+    }
+
     /// <summary>Tam ekran saydam katman: her menü/ek bölge satırının üstüne Türkçesini çizer (canli.ps1 $mform Paint).</summary>
     public sealed class MenuKatmani : KaplamaPenceresi
     {
@@ -62,9 +72,12 @@ namespace Canli.Kaplama
                             f = YaziTipi(px);
                             boy = g.MeasureString(m.Tr, f);
                         }
-                        float w = Math.Max(r.Width, boy.Width) + 8, h = Math.Max(r.Height, boy.Height) + 4;
+                        // Ekranın sağ kenarına sığmayan metin bu genişlikte alt satıra kaydırılır.
+                        float sinir = MenuYerlesimi.SatirSiniri(r.X, r.Width, ClientSize.Width);
+                        if (boy.Width > sinir) boy = g.MeasureString(m.Tr, f, (int)sinir);
+                        float w = Math.Max(r.Width, Math.Min(boy.Width, sinir)) + 8, h = Math.Max(r.Height, boy.Height) + 4;
                         g.FillRectangle(zemin, r.X - 4f, r.Y - 2f, w, h);
-                        g.DrawString(m.Tr, f, Brushes.White, r.X, r.Y - 2 + (h - boy.Height) / 2);
+                        g.DrawString(m.Tr, f, Brushes.White, new RectangleF(r.X, r.Y - 2 + (h - boy.Height) / 2, sinir, boy.Height + 2));
                     }
                     finally { f.Dispose(); }
                 }
