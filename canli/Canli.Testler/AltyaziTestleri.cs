@@ -171,8 +171,9 @@ namespace Canli.Testler
             }
             var b = d.Baglam;
             Assert.Equal(5, b.Count);
-            Assert.EndsWith("7", b[4]);
-            Assert.EndsWith("3", b[0]);
+            Assert.EndsWith("6", b[4]);   // geçerli (7.) satır yok
+            Assert.EndsWith("2", b[0]);
+            Assert.DoesNotContain(b, x => x.EndsWith("7"));
         }
 
         [Fact]

@@ -64,14 +64,15 @@ namespace Canli.Mantik
 
         public AltyaziDurumu(Func<double> simdiMs) { _simdi = simdiMs; }
 
-        /// <summary>Son 5 İngilizce satır (en eskisi başta; geçerli satır dahil).</summary>
+        /// <summary>Geçerli satırdan ÖNCEKİ en çok 5 İngilizce satır (en eskisi başta; geçerli satır yok).</summary>
         public IReadOnlyList<string> Baglam
         {
             get
             {
                 var l = new List<string>();
-                int bas = Math.Max(0, _son.Count - 5);
-                for (int i = bas; i < _son.Count; i++) l.Add(_son[i].En);
+                int son = _gecerli != null ? _son.Count - 1 : _son.Count;
+                int bas = Math.Max(0, son - 5);
+                for (int i = bas; i < son; i++) l.Add(_son[i].En);
                 return l;
             }
         }
