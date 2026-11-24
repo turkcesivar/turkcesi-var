@@ -18,7 +18,8 @@ import { cihazOzeti, makineGuidOku } from "../../src/canli/cihaz.js";
 import { LisansDeposu } from "../../src/canli/lisans-deposu.js";
 import { CanliSunucu } from "../../src/canli/sunucu.js";
 import { CanliYonetici } from "../../src/canli/yonetici.js";
-import { canliExeYolu, canliSurecBaslat, gercekSifreleyici, surecAcikMiAsenkron } from "./canli.js";
+import type { CanliDurum } from "../../src/canli/tipler.js";
+import { canliExeYolu, canliSurecBaslat, gercekSifreleyici, surecAcikMiAsenkron, yenidenDenenirSoz, yoneticiyiAc } from "./canli.js";
 
 const burasi = dirname(fileURLToPath(import.meta.url));
 const KLASOR = uygulamaKlasoru();
@@ -41,8 +42,6 @@ let yaziyor = 0;
 let kapanmaBekliyor = false;
 /** Son tarama listesi (Canlı Çeviri yöneticisi oyunları buradan tanır). */
 let sonListe: ArayuzOyunu[] = [];
-/** Cihaz özeti açılışta bir kez hesaplanır; işleyiciler hazır olmadan gelen çağrıyı bu söz bekletir. */
-let canliHazir: Promise<CanliYonetici>;
 let canliYonetici: CanliYonetici | undefined;
 
 function canliKur(): Promise<CanliYonetici> {
@@ -55,13 +54,19 @@ function canliKur(): Promise<CanliYonetici> {
       surecAcikMi: surecAcikMiAsenkron,
       ...(!app.isPackaged && process.env.TV_CANLI_TEST_OYUNU ? { testOyunu: process.env.TV_CANLI_TEST_OYUNU } : {}),
     });
-    y.dinle((d) => {
+    canliYonetici = y;
+    // Açılışta lisans durumu hemen istenir (diskte bekleyen eşleştirme numarası da yoklanmaya başlar).
+    return yoneticiyiAc(y, (d: CanliDurum) => {
       if (pencere && !pencere.webContents.isDestroyed()) pencere.webContents.send("tv:canli", d);
     });
-    canliYonetici = y;
-    return y;
   });
 }
+
+/**
+ * Cihaz özeti açılışta bir kez hesaplanır; işleyiciler hazır olmadan gelen çağrıyı bu söz bekletir.
+ * Kurulum reddedildiyse (kimlik okunamadı) sonraki çağrı yeniden dener.
+ */
+const canliHazir = yenidenDenenirSoz(canliKur);
 
 /** Pencere ve görev çubuğu simgesi (kurulumda resources\simge.ico). */
 const SIMGE = gelistirme ? join(app.getAppPath(), "build", "simge.ico") : join(process.resourcesPath, "simge.ico");
@@ -269,12 +274,12 @@ function ipcKur() {
   ipcMain.handle("tv:disBaglanti", (_e, url: string) => (url.startsWith("https://") ? shell.openExternal(url) : undefined));
   ipcMain.handle("tv:surum", () => app.getVersion());
 
-  ipcMain.handle("tv:canliDurum", async () => (await canliHazir).durum());
-  ipcMain.handle("tv:canliYenile", async () => (await canliHazir).yenile());
-  ipcMain.handle("tv:canliDeneme", async () => (await canliHazir).deneme());
-  ipcMain.handle("tv:canliEslestir", async () => (await canliHazir).eslestirBaslat());
-  ipcMain.handle("tv:canliBaslat", async () => (await canliHazir).calistir());
-  ipcMain.handle("tv:canliDurdur", async () => (await canliHazir).durdur());
+  ipcMain.handle("tv:canliDurum", async () => (await canliHazir()).durum());
+  ipcMain.handle("tv:canliYenile", async () => (await canliHazir()).yenile());
+  ipcMain.handle("tv:canliDeneme", async () => (await canliHazir()).deneme());
+  ipcMain.handle("tv:canliEslestir", async () => (await canliHazir()).eslestirBaslat());
+  ipcMain.handle("tv:canliBaslat", async () => (await canliHazir()).calistir());
+  ipcMain.handle("tv:canliDurdur", async () => (await canliHazir()).durdur());
 }
 
 void app.whenReady().then(() => {
@@ -299,8 +304,7 @@ void app.whenReady().then(() => {
   guncelleme = guncellemeyiBaslat(app.isPackaged, (d: GuncellemeDurumu) => {
     if (pencere && !pencere.webContents.isDestroyed()) pencere.webContents.send("tv:guncelleme", d);
   });
-  canliHazir = canliKur();
-  canliHazir.catch(() => {
+  canliHazir().catch(() => {
     // cihaz kimliği okunamazsa Canlı Çeviri kullanılamaz; uygulamanın geri kalanı etkilenmez
   });
   ipcKur();

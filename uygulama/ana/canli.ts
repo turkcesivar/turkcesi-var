@@ -40,14 +40,49 @@ export function canliSurecBaslat(exeYolu: string): CanliSurec {
   };
 }
 
-/** Süreç adı çalışıyor mu (asenkron: arayüz donmaz). Hata ya da zaman aşımında false. */
+/**
+ * tasklist CSV çıktısında süreç adı var mı? Tablo çıktısı adı 25 karakterde keser
+ * (ör. "Oyun-Win64-Shipping.exe" uzun adları); CSV'de ad tam ve tırnaklı gelir.
+ */
+export function tasklistteVar(cikti: string, ad: string): boolean {
+  return cikti.toLowerCase().includes(`"${ad.toLowerCase()}"`);
+}
+
+/** Süreç adı çalışıyor mu (asenkron: arayüz donmaz). Yoklama başarısızsa (hata/zaman aşımı) true: oturum sürer. */
 export function surecAcikMiAsenkron(ad: string): Promise<boolean> {
   return new Promise((coz) => {
-    execFile("tasklist", ["/FI", `IMAGENAME eq ${ad}`, "/NH"], { windowsHide: true, timeout: 5000 }, (hata, cikti) => {
-      if (hata) return coz(false);
-      coz(String(cikti).toLowerCase().includes(ad.toLowerCase()));
+    execFile("tasklist", ["/FI", `IMAGENAME eq ${ad}`, "/FO", "CSV", "/NH"], { windowsHide: true, timeout: 5000 }, (hata, cikti) => {
+      if (hata) return coz(true);
+      coz(tasklistteVar(String(cikti), ad));
     });
   });
+}
+
+/** Açılışta yönetici: arayüze yayını bağlar ve lisans durumunu hemen sunucudan ister. */
+export function yoneticiyiAc<Y extends { dinle(f: (d: D) => void): unknown; yenile(): Promise<void> }, D>(y: Y, yay: (d: D) => void): Y {
+  y.dinle(yay);
+  void y.yenile().catch(() => {
+    // yenile kendi hatasını durumda gösterir
+  });
+  return y;
+}
+
+/**
+ * Kurulumu bir kez yapan, ama reddedilirse sonraki çağrıda yeniden deneyen söz
+ * (ör. cihaz kimliği ilk açılışta okunamadıysa "Yeniden dene" uygulamayı yeniden başlatmadan çalışsın).
+ */
+export function yenidenDenenirSoz<T>(kur: () => Promise<T>): () => Promise<T> {
+  let soz: Promise<T> | null = null;
+  return () => {
+    if (!soz) {
+      const p = kur();
+      soz = p;
+      p.catch(() => {
+        if (soz === p) soz = null;
+      });
+    }
+    return soz;
+  };
 }
 
 export interface SafeStorageBenzeri {

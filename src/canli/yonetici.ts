@@ -36,14 +36,20 @@ export interface YoneticiSecenekleri {
 
 const YOKLAMA_MS = 5000;
 const UYARI_MS = 15000;
+/** Oturum hatayla ya da süreç kapanınca biterse öndeki pencere bu kadar sonra yeniden değerlendirilir. */
+const YENIDEN_DEGERLENDIR_MS = 3000;
 // Bu sunucu hatalarında lisans geçersizdir (sunucuya ulaşıldı); diğerlerinde durum bilinmez (null).
 const LISANS_HATALARI = new Set(["lisans_yok", "cihaz_dustu"]);
 
 type Olay = { olay: string; [alan: string]: unknown };
 
+/** Windows yolları büyük/küçük harf duyarsızdır. */
+const ayniYol = (a: string | null, b: string | null) => a !== null && b !== null && a.toLowerCase() === b.toLowerCase();
+
 export class CanliYonetici {
   private readonly o: YoneticiSecenekleri;
-  private d: CanliDurum = { yukleniyor: false, lisans: null, calisma: "kapali" };
+  // İlk yenile() bitene kadar yükleniyor: arayüz iskelet gösterir (lisans=null "sunucuya ulaşılamıyor" sanılmaz).
+  private d: CanliDurum = { yukleniyor: true, lisans: null, calisma: "kapali" };
   private readonly dinleyiciler = new Set<(d: CanliDurum) => void>();
 
   private surec: CanliSurec | null = null;
@@ -59,6 +65,11 @@ export class CanliYonetici {
   private eslesmeYoklama: unknown = null;
   private eslesmeYoklaniyor = false;
   private uyariSayaci: unknown = null;
+  /** canli.exe'nin bildirdiği son ön plan yolu (oturum bitince yeniden değerlendirmek için). */
+  private sonYol: string | null = null;
+  private degerlendirmeSayaci: unknown = null;
+  /** Süren yenile() (eşzamanlı çağrılar aynı sözü alır). */
+  private yenileniyor: Promise<void> | null = null;
   /** kapat() sonrası hiçbir zamanlayıcı ya da süreç başlatılmaz. */
   private kapandi = false;
 
@@ -186,7 +197,17 @@ export class CanliYonetici {
     this.eslesmeYaz(null);
   }
 
-  async yenile(): Promise<void> {
+  /** Lisans durumunu sunucudan yeniler; süren bir yenileme varsa onun sözünü döndürür. */
+  yenile(): Promise<void> {
+    if (this.yenileniyor) return this.yenileniyor;
+    const p = this.yenileIc().finally(() => {
+      if (this.yenileniyor === p) this.yenileniyor = null;
+    });
+    this.yenileniyor = p;
+    return p;
+  }
+
+  private async yenileIc(): Promise<void> {
     this.d.yukleniyor = true;
     this.yay();
     try {
@@ -227,6 +248,8 @@ export class CanliYonetici {
     this.d.lisans = CanliYonetici.bilgi(r.veri);
     delete this.d.sunucuHatasi;
     this.yay();
+    // Deneme yanıtında günlük kalan yok: tam durumu sunucudan al.
+    void this.yenile();
     return {};
   }
 
@@ -347,6 +370,7 @@ export class CanliYonetici {
     this.surec = null;
     this.tampon = "";
     this.engelliYol = null;
+    this.sonYol = null;
     this.oturumBirak();
   }
 
@@ -355,6 +379,31 @@ export class CanliYonetici {
     this.oturumHatasi = null;
     this.araligiDurdur(this.surecYoklama);
     this.surecYoklama = null;
+    this.gecikmeyiDurdur(this.degerlendirmeSayaci);
+    this.degerlendirmeSayaci = null;
+  }
+
+  /** Oturum bittikten kısa süre sonra öndeki pencereyi yeniden değerlendirir (her seferinde beklenir: sıkı döngü olmaz). */
+  private yenidenDegerlendir(kapanan?: { yol: string; sureciAdi: string }): void {
+    if (this.kapandi || !this.surec) return;
+    this.gecikmeyiDurdur(this.degerlendirmeSayaci);
+    this.degerlendirmeSayaci = this.gecikme(() => {
+      this.degerlendirmeSayaci = null;
+      if (this.kapandi || !this.surec || this.oturum) return;
+      const yol = this.sonYol;
+      if (!kapanan || !ayniYol(yol, kapanan.yol)) {
+        this.onPlan(yol);
+        return;
+      }
+      // Son ön plan kapanan sürecin kendisi: yalnız yeniden açıldıysa başlatılır.
+      const s = this.surec;
+      this.o
+        .surecAcikMi(kapanan.sureciAdi)
+        .catch(() => false)
+        .then((acik) => {
+          if (acik && !this.kapandi && this.surec === s && !this.oturum && this.sonYol === yol) this.onPlan(yol);
+        });
+    }, YENIDEN_DEGERLENDIR_MS);
   }
 
   private beklenmeyenCikis(): void {
@@ -432,12 +481,19 @@ export class CanliYonetici {
         this.d.calisma = "bekleniyor";
         delete this.d.oyunAdi;
         this.yay();
+        // Oyun hâlâ öndeyse kısa bir beklemeden sonra yeniden denenir.
+        this.yenidenDegerlendir();
         return;
-      case "kalan":
+      case "kalan": {
         if (typeof o.kalan !== "number" || !Number.isFinite(o.kalan) || !this.d.lisans) return;
-        this.d.lisans.kalan = o.kalan;
+        const l = this.d.lisans;
+        // Harcanan satırlar günlük kalandan da düşer.
+        const harcanan = typeof l.kalan === "number" ? l.kalan - o.kalan : 0;
+        if (harcanan > 0 && typeof l.gunKalan === "number") l.gunKalan = Math.max(0, l.gunKalan - harcanan);
+        l.kalan = o.kalan;
         this.yay();
         return;
+      }
       case "uyari":
         if (typeof o.kod !== "string") return;
         this.d.uyari = o.kod;
@@ -458,8 +514,26 @@ export class CanliYonetici {
     }
   }
 
+  /** Başlatılabilir (engelsiz) bir oyun mu? */
+  private baslatilabilir(yol: string | null): boolean {
+    const oyun = oyunBul(yol, this.o.oyunlar());
+    if (!oyun || !yol) return false;
+    if (oyun.durum === "hile-korumali") return false;
+    if (oyun.durum === "destekleniyor" && !this.o.testOyunu) return false;
+    return true;
+  }
+
   private onPlan(yol: string | null): void {
-    if (!this.surec || this.oturum) return;
+    if (!this.surec) return;
+    this.sonYol = yol;
+    if (this.oturum) {
+      // Başka bir oyun süreci öne geldi (ör. başlatıcıdan açılan asıl oyun): oturum ona geçer.
+      if (yol === null || ayniYol(yol, this.oturum.yol) || !this.baslatilabilir(yol)) return;
+      this.komut({ komut: "dur" });
+      this.oturumBirak();
+      this.d.calisma = "bekleniyor";
+      delete this.d.oyunAdi;
+    }
     // Sunucunun reddettiği oyun hâlâ öndeyse engel kalır; başka pencere gelince unutulur.
     if (yol !== null && yol === this.engelliYol) return;
     this.engelliYol = null;
@@ -525,5 +599,6 @@ export class CanliYonetici {
     this.d.calisma = "bekleniyor";
     delete this.d.oyunAdi;
     this.yay();
+    this.yenidenDegerlendir(oturum);
   }
 }

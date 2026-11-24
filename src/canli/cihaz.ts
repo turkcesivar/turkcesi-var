@@ -12,7 +12,7 @@ export type KomutCalistirici = (
 ) => void;
 
 const varsayilanCalistirici: KomutCalistirici = (komut, argumanlar, bitti) => {
-  execFile(komut, argumanlar, { windowsHide: true }, (hata, cikti) => bitti(hata, String(cikti)));
+  execFile(komut, argumanlar, { windowsHide: true, timeout: 5000 }, (hata, cikti) => bitti(hata, String(cikti)));
 };
 
 export function cihazOzeti(machineGuid: string): string {
