@@ -30,6 +30,12 @@ namespace Canli.Kaplama
         public void Gizle() { Opacity = 0.0; }
 
         /// <summary>Yatayda merkezX'e ortalanır, alt kenarı ust'ün 6 piksel üstünde durur.</summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _etiket.Font.Dispose();
+            base.Dispose(disposing);
+        }
+
         public void Goster(string metin, int merkezX, int ust, int bolgeGenisligi)
         {
             if (string.IsNullOrEmpty(metin)) { Gizle(); return; }

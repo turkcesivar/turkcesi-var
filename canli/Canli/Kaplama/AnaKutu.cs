@@ -31,6 +31,12 @@ namespace Canli.Kaplama
 
         /// <summary>metin boşsa gizlenir. kutu: okunan satırın bölgeye göre dikdörtgeni (boşsa bölgenin ortası).
         /// bolge: altyazı bölgesinin ekran pikselleri.</summary>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _etiket.Font.Dispose();
+            base.Dispose(disposing);
+        }
+
         public void Goster(string metin, Rectangle kutu, Rectangle bolge)
         {
             if (string.IsNullOrEmpty(metin)) { Opacity = 0.0; _etiket.Text = ""; return; }

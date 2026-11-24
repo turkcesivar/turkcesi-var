@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Canli.Goruntu;
 
@@ -28,7 +29,7 @@ namespace Canli
             SetProcessDPIAware();
             // UI iş parçacığında beklenmeyen bir hata pencere açmasın; stdout'a da bir şey yazılmaz.
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
-            Application.ThreadException += (s, e) => { };
+            Application.ThreadException += (s, e) => Beklenmeyen();
 
             _cikis = new KonsolCikis();
             var ui = new WindowsFormsSynchronizationContext();
@@ -104,7 +105,8 @@ namespace Canli
                     if (_cihazOzeti == null) _cihazOzeti = CihazKimligi.Ozet(CihazKimligi.MakineGuidOku());
                     var sunucu = new SunucuIstemcisi(Isleyici, SunucuAdresi, komut.Lisans, _cihazOzeti);
                     _calistirici = new Calistirici(komut, _cikis, sunucu, _okuyucu);
-                    _ = _calistirici.Basla();
+                    _calistirici.Basla().ContinueWith(t => { var _ = t.Exception; Beklenmeyen(); }, CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());
                     break;
                 case "duraklat":
                     if (_calistirici != null) _calistirici.Duraklat();
@@ -117,6 +119,26 @@ namespace Canli
                     else _cikis.Yaz(Protokol.Olay("durdu", ("neden", "komut")));
                     break;
             }
+        }
+
+        private static bool _beklenmeyenYazildi;
+
+        // Beklenmeyen bir hata: çalışan oturum varsa "hata beklenmeyen" + "durdu hata" (oturum başına bir kez);
+        // oturum yoksa aynı iki olay süreç boyunca bir kez yazılır.
+        private static void Beklenmeyen()
+        {
+            var c = _calistirici;
+            if (c != null)
+            {
+                if (c.Durdu) return;
+                _cikis.Yaz(Protokol.Olay("hata", ("kod", "beklenmeyen")));
+                c.Dur("hata");
+                return;
+            }
+            if (_beklenmeyenYazildi) return;
+            _beklenmeyenYazildi = true;
+            _cikis.Yaz(Protokol.Olay("hata", ("kod", "beklenmeyen")));
+            _cikis.Yaz(Protokol.Olay("durdu", ("neden", "hata")));
         }
 
         // Çalışan bir oturum varsa durdurup kaynaklarını bırakır.

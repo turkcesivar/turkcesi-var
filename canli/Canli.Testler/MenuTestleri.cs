@@ -118,6 +118,38 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public async Task ek_bolge_odak_kaybinda_okumaz()
+        {
+            bool onde = true;
+            var s = new Sahneler("{\"tr\":\"x\"}", oyunGovdesi: "{\"durum\":\"acik\",\"profil\":{\"ekBolgeler\":[[0,0,0.3,0.1]]}}");
+            var c = s.Calistirici(new OnPlanBekcisi("Mafia.exe", () => (onde ? "Mafia" : "explorer", new IntPtr(7))));
+            await c.Basla();
+            c.YakalamaTik();                 // oyun önde: ekran bilinir
+            c.EkBolgeTik();
+            int al = s.Ekran.AlSayisi;
+            Assert.True(al > 0);             // karşı sınama: öndeyken ek bölge okunur
+
+            onde = false;                    // odak başka uygulamaya geçti; yakalama tıkı henüz çalışmadı
+            c.EkBolgeTik();
+            Assert.Equal(al, s.Ekran.AlSayisi);
+            Assert.True(s.Kaplama.GizleSayisi > 0);
+        }
+
+        [Fact]
+        public async Task menu_odak_kaybinda_okumaz()
+        {
+            bool onde = true;
+            var s = new Sahneler("{\"tr\":\"x\"}");
+            // F7 hep basılı görünür: ilk basış kenarı oyun arkadayken gelir.
+            var c = s.Calistirici(new OnPlanBekcisi("Mafia.exe", () => (onde ? "Mafia" : "explorer", new IntPtr(7))), _ => !onde);
+            await c.Basla();
+            onde = false;
+            c.YakalamaTik();
+            Assert.Equal(0, s.Ekran.AlSayisi);
+            Assert.Equal(0, s.Ekran.ImzaSayisi);
+        }
+
+        [Fact]
         public async Task lisans_bitince_durur()
         {
             var s = new Sahneler(null, ceviriDurumu: HttpStatusCode.Forbidden, ceviriGovdesi: "{\"hata\":\"suresi_bitti\"}");
@@ -220,11 +252,11 @@ namespace Canli.Testler
                 Sunucu = new SunucuIstemcisi(isleyici, "https://ornek.invalid", "K", "C");
             }
 
-            public Calistirici Calistirici(OnPlanBekcisi bekci)
+            public Calistirici Calistirici(OnPlanBekcisi bekci, Func<int, bool> tus = null)
             {
                 var komut = new Komut { Tur = "basla", Lisans = "K", Oyun = "test:x", OyunAdi = "Test", Profil = Profil.Varsayilan };
                 var ekranlar = new TekEkran();
-                return new Calistirici(komut, Cikis, Sunucu, Ekran, bekci, Kaplama, Zaman, ekranlar, () => _t += 50, _ => false);
+                return new Calistirici(komut, Cikis, Sunucu, Ekran, bekci, Kaplama, Zaman, ekranlar, () => _t += 50, tus ?? (_ => false));
             }
         }
 

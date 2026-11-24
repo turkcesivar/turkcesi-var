@@ -200,7 +200,8 @@ namespace Canli
                 else if (karar == MenuAlgilayici.Karar.Oku)
                 { _ = _menuHatti.EkraniCevir(_ekran, _bolge, false); }
 
-                AltyaziOku();
+                // Tam ekran menü OCR'ı sürerken altyazı OCR'ı atlanır (Okuyucu kilidinde UI beklemesin).
+                if (!_menuHatti.Okunuyor) AltyaziOku();
             }
             catch (Exception)
             {
@@ -228,9 +229,15 @@ namespace Canli
         /// <summary>1 sn: ek bölgeler (menü açıkken okunmaz).</summary>
         public void EkBolgeTik()
         {
-            if (Durdu || !_basladi || _arkada || _duraklat || _menu.MenuAcik) return;
-            if (_profil.EkBolgeler == null || _profil.EkBolgeler.Length == 0 || _ekran.IsEmpty) return;
-            try { _menuHatti.EkBolgeleriOku(_ekran, _profil.EkBolgeler); }
+            if (Durdu || !_basladi || _duraklat || _menu.MenuAcik || _menuHatti.Okunuyor) return;
+            if (_profil.EkBolgeler == null || _profil.EkBolgeler.Length == 0) return;
+            try
+            {
+                // Ön plan her okumadan hemen önce yeniden sorulur: odak az önce başka uygulamaya geçmiş olabilir.
+                if (!_bekci.OyunOnde(out _)) { ArkayaDustu(); return; }
+                if (_arkada || _ekran.IsEmpty) return;
+                _menuHatti.EkBolgeleriOku(_ekran, _profil.EkBolgeler);
+            }
             catch (Exception) { }
         }
 

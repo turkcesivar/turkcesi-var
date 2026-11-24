@@ -47,6 +47,9 @@ namespace Canli.Mantik
             return ad;
         }
 
+        // Ön plan penceresi ve süreç numarası aynı kaldıkça ad yeniden sorulmaz.
+        // Süreç kapanınca penceresi de yok olur; tutamaç ya da numara değişince önbellek geçersizdir.
+        private static IntPtr _sonPencere;
         private static uint _sonSurecNo;
         private static string _sonSurecAdi;
 
@@ -56,11 +59,13 @@ namespace Canli.Mantik
             if (h == IntPtr.Zero) return (null, IntPtr.Zero);
             GetWindowThreadProcessId(h, out uint no);
             if (no == 0) return (null, h);
-            if (no == _sonSurecNo && _sonSurecAdi != null) return (_sonSurecAdi, h);
+            if (h == _sonPencere && no == _sonSurecNo && _sonSurecAdi != null) return (_sonSurecAdi, h);
+            _sonPencere = IntPtr.Zero; _sonSurecNo = 0; _sonSurecAdi = null;
             try
             {
                 using (var p = Process.GetProcessById((int)no))
                 {
+                    _sonPencere = h;
                     _sonSurecNo = no;
                     _sonSurecAdi = p.ProcessName;
                     return (_sonSurecAdi, h);
