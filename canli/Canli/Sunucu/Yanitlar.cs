@@ -17,6 +17,14 @@ namespace Canli
         public string HataKodu;
     }
 
+    /// <summary>GET /durum yanıtı: Durum "lisanssiz" | "etkin" | "hak_bitti" | "suresi_bitti".</summary>
+    public sealed class LisansDurumu
+    {
+        public string Durum;
+        public int? Kalan;
+        public string HataKodu;
+    }
+
     /// <summary>Sunucunun bir oyun için bildirdiği durum: "paketli", "yasakli" ya da "acik".</summary>
     public sealed class OyunBilgisi
     {

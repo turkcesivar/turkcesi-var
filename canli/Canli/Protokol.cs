@@ -37,6 +37,8 @@ namespace Canli
         public string Oyun;
         public string OyunAdi;
         public Profil Profil;
+        /// <summary>Profil komutta açıkça verildi mi (verilmediyse sunucunun profili kullanılır).</summary>
+        public bool ProfilVerildi;
         public string SurecAdi;
     }
 
@@ -102,7 +104,10 @@ namespace Canli
                         Profil = Profil.Varsayilan
                     };
                     if (kok.TryGetProperty("profil", out JsonElement p) && p.ValueKind == JsonValueKind.Object)
+                    {
                         k.Profil = ProfilOku(p);
+                        k.ProfilVerildi = true;
+                    }
                     komut = k;
                     hata = null;
                     return true;
@@ -154,9 +159,9 @@ namespace Canli
                     case "--lisans": k.Lisans = deger; break;
                     case "--oyun": k.Oyun = deger; break;
                     case "--oyunAdi": k.OyunAdi = deger; break;
-                    case "--renk": profil.Renk = deger; break;
-                    case "--bolge": profil.AltyaziBolgesi = Bolge(deger); break;
-                    case "--ek": ek.Add(Bolge(deger)); break;
+                    case "--renk": profil.Renk = deger; k.ProfilVerildi = true; break;
+                    case "--bolge": profil.AltyaziBolgesi = Bolge(deger); k.ProfilVerildi = true; break;
+                    case "--ek": ek.Add(Bolge(deger)); k.ProfilVerildi = true; break;
                     case "--surec": k.SurecAdi = deger; break;
                     default: throw new ArgumentException("Bilinmeyen argüman: " + a);
                 }

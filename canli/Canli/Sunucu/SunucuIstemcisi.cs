@@ -50,6 +50,22 @@ namespace Canli
             _cihazOzeti = cihazOzeti;
         }
 
+        /// <summary>GET /durum: lisansın durumu ve kalan hak (lisans geçersizse HataKodu).</summary>
+        public async Task<LisansDurumu> DurumAsync()
+        {
+            var (hata, kok) = await IstekAsync(HttpMethod.Get, "durum", null);
+            using (kok)
+            {
+                if (hata != null) return new LisansDurumu { HataKodu = hata };
+                var k = kok.RootElement;
+                var sonuc = new LisansDurumu();
+                if (k.TryGetProperty("durum", out var d) && d.ValueKind == JsonValueKind.String) sonuc.Durum = d.GetString();
+                if (k.TryGetProperty("kalan", out var kal) && kal.ValueKind == JsonValueKind.Number && kal.TryGetInt32(out int n))
+                    sonuc.Kalan = n;
+                return sonuc;
+            }
+        }
+
         public async Task<OyunBilgisi> OyunAsync(string kimlik)
         {
             var (hata, kok) = await IstekAsync(HttpMethod.Get, "oyun/" + Uri.EscapeDataString(kimlik ?? ""), null);
