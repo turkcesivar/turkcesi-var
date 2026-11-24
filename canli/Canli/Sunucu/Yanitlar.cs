@@ -5,6 +5,8 @@ namespace Canli
     {
         public string Tr;
         public bool Okunamaz;
+        /// <summary>Sunucunun bildirdiği kaynak: "bellek" (ortak bellek) ya da "model".</summary>
+        public string Kaynak;
         public int? Kalan;
         public string HataKodu;
     }

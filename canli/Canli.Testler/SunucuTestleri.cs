@@ -93,6 +93,7 @@ namespace Canli.Testler
             var h = new SahteIsleyici { Yanit = (i, g) => (HttpStatusCode.OK, "{\"tr\":\"Merhaba\",\"kaynak\":\"bellek\",\"okunamaz\":false,\"kalan\":42}") };
             var s = await Yap(h).CeviriAsync("o", "a", "Hello", new string[0]);
             Assert.Equal("Merhaba", s.Tr);
+            Assert.Equal("bellek", s.Kaynak);
             Assert.Equal(42, s.Kalan);
             Assert.False(s.Okunamaz);
             Assert.Null(s.HataKodu);

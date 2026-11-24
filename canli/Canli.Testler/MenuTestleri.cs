@@ -227,6 +227,90 @@ namespace Canli.Testler
             Assert.Equal("ikisi", Calistirici.ProfilSec(bos, null).Renk);
         }
 
+        // ---- Tanı kaydı ----
+
+        [Fact]
+        public async Task tani_altyazi_satiri_kaynak_ve_surelerle_yazilir()
+        {
+            var s = new Sahneler("{\"tr\":\"Gitmeliyiz, Enzo.\",\"kaynak\":\"model\",\"okunamaz\":false,\"kalan\":9}");
+            var tani = new SahteTani();
+            var c = s.Calistirici(new OnPlanBekcisi(""), tani: tani);
+            await c.Basla();
+            Assert.Contains(tani.Satirlar(), l => l.StartsWith("{\"olay\":\"basladi\",\"oyun\":\"test:x\""));
+
+            s.Ekran.Satirlar = new[] { "We have to go now, Enzo." };
+            c.YakalamaTik();
+
+            Assert.True(SpinWait.SpinUntil(() => tani.Satirlar().Any(l => l.Contains("\"altyazi\"")), 5000));
+            string satir = tani.Satirlar().First(l => l.Contains("\"altyazi\""));
+            Assert.Contains("\"en\":\"We have to go now, Enzo.\"", satir);
+            Assert.Contains("\"kaynak\":\"model\"", satir);
+            Assert.Contains("\"hata\":null", satir);
+            Assert.DoesNotContain("\"istekMs\":null", satir);
+            Assert.Contains("\"toplamMs\":", satir);
+            // Tanı çıktısı protokol kanalına karışmaz.
+            Assert.DoesNotContain(s.Cikis.Satirlar(), l => l.Contains("altyazi"));
+        }
+
+        [Fact]
+        public async Task tani_f7_menu_okuma_ve_ceviri_yazilir()
+        {
+            var s = new Sahneler("{\"tr\":\"x\"}");
+            var tani = new SahteTani();
+            var c = s.Calistirici(new OnPlanBekcisi(""), tus: k => k == Calistirici.VkF7, tani: tani);
+            await c.Basla();
+            s.Ekran.Satirlar = new[] { "New Game", "Continue", "Options" };
+            c.YakalamaTik();
+
+            Assert.True(SpinWait.SpinUntil(() => tani.Satirlar().Any(l => l.Contains("\"menu_ceviri\"")), 5000));
+            var satirlar = tani.Satirlar();
+            Assert.Contains(satirlar, l => l.Contains("\"menu_okundu\"") && l.Contains("\"elle\":true") && l.Contains("\"satir\":3"));
+            Assert.Contains(satirlar, l => l.Contains("\"menu_ceviri\"") && l.Contains("\"tur\":\"menu\"") && l.Contains("\"oge\":3"));
+        }
+
+        [Fact]
+        public void dosya_tani_satirlari_yazar()
+        {
+            string klasor = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "canli-tani-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                string yol;
+                using (var t = new DosyaTani(klasor, () => 1234.56))
+                {
+                    yol = t.Yol;
+                    t.Yaz("altyazi", ("en", "Çalış"), ("ocrMs", 12.5), ("hata", null));
+                }
+                var satirlar = System.IO.File.ReadAllLines(yol);
+                Assert.Single(satirlar);
+                Assert.Equal("{\"olay\":\"altyazi\",\"t\":1234.6,\"en\":\"Çalış\",\"ocrMs\":12.5,\"hata\":null}", satirlar[0]);
+            }
+            finally { try { System.IO.Directory.Delete(klasor, true); } catch (Exception) { } }
+        }
+
+        [Fact]
+        public void kapali_dosya_taniya_yazmak_hata_vermez()
+        {
+            string klasor = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "canli-tani-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var t = new DosyaTani(klasor, () => 0);
+                t.Dispose();
+                t.Yaz("durdu", ("neden", "komut"));
+                t.Dispose();
+            }
+            finally { try { System.IO.Directory.Delete(klasor, true); } catch (Exception) { } }
+        }
+
+        private sealed class SahteTani : ITaniKaydi
+        {
+            private readonly List<string> _l = new List<string>();
+            public void Yaz(string tur, params (string anahtar, object deger)[] alanlar)
+            {
+                lock (_l) _l.Add(Protokol.Olay(tur, alanlar));
+            }
+            public List<string> Satirlar() { lock (_l) return _l.ToList(); }
+        }
+
         // ---- Sahteler ----
 
         private sealed class Sahneler
@@ -252,11 +336,11 @@ namespace Canli.Testler
                 Sunucu = new SunucuIstemcisi(isleyici, "https://ornek.invalid", "K", "C");
             }
 
-            public Calistirici Calistirici(OnPlanBekcisi bekci, Func<int, bool> tus = null)
+            public Calistirici Calistirici(OnPlanBekcisi bekci, Func<int, bool> tus = null, ITaniKaydi tani = null)
             {
                 var komut = new Komut { Tur = "basla", Lisans = "K", Oyun = "test:x", OyunAdi = "Test", Profil = Profil.Varsayilan };
                 var ekranlar = new TekEkran();
-                return new Calistirici(komut, Cikis, Sunucu, Ekran, bekci, Kaplama, Zaman, ekranlar, () => _t += 50, tus ?? (_ => false));
+                return new Calistirici(komut, Cikis, Sunucu, Ekran, bekci, Kaplama, Zaman, ekranlar, () => _t += 50, tus ?? (_ => false), tani);
             }
         }
 

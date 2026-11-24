@@ -29,6 +29,8 @@ namespace Canli
         private readonly MenuAlgilayici _algilayici;
         private readonly Action<string> _hata;     // sunucu hata kodu → çalıştırıcı
         private readonly Func<bool> _durdu;
+        private readonly ITaniKaydi _tani;
+        private readonly Func<double> _saat;
 
         // Süreç içi menü çeviri belleği (tam metin → çeviri; "" = çevrilmez). Yeniden açılan ekran anında dolar.
         private readonly Dictionary<string, string> _bellek = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -39,11 +41,17 @@ namespace Canli
         private int _nesil;
 
         public MenuHatti(string oyun, string oyunAdi, SunucuIstemcisi sunucu, IEkranOkuyucu ekranOkuyucu, IKaplama kaplama,
-                         MenuAlgilayici algilayici, Action<string> hata, Func<bool> durdu)
+                         MenuAlgilayici algilayici, Action<string> hata, Func<bool> durdu,
+                         ITaniKaydi tani = null, Func<double> saatMs = null)
         {
             _oyun = oyun; _oyunAdi = oyunAdi; _sunucu = sunucu; _ekranOkuyucu = ekranOkuyucu;
             _kaplama = kaplama; _algilayici = algilayici; _hata = hata; _durdu = durdu;
+            _tani = tani ?? BosTani.Ornek;
+            _saat = saatMs ?? (() => 0);
         }
+
+        // decimal: JSON'da 12.3 olarak yazılır (double net48'de 12.299999999999999 olabilir).
+        private static decimal Ms(double ms) { return (decimal)Math.Round(ms, 1); }
 
         /// <summary>Tam ekran OCR'ı sürüyor mu.</summary>
         public bool Okunuyor { get; private set; }
@@ -52,6 +60,7 @@ namespace Canli
         public void MenuKapat()
         {
             _nesil++;
+            if (_algilayici.MenuAcik) _tani.Yaz("menu_kapandi");
             _algilayici.MenuAcik = false;
             if (_menuKutular.Count > 0) { _menuKutular = new List<MenuKutusu>(); Yenile(); }
         }
@@ -74,6 +83,7 @@ namespace Canli
             if (Okunuyor) return;
             int nesil = _nesil;
             IReadOnlyList<OcrSatiri> satirlar;
+            double t0 = _saat();
             Okunuyor = true;
             try
             {
@@ -88,7 +98,12 @@ namespace Canli
             var secilen = satirlar
                 .Where(s => IkiHarf.IsMatch(s.Metin) && !(s.Kutu.Y >= bolgeUst && s.Kutu.Bottom <= bolgeAlt))
                 .ToList();
-            if (!elle && !_algilayici.YeterliSatir(secilen.Count)) return;
+            double ocrMs = _saat() - t0;
+            if (!elle && !_algilayici.YeterliSatir(secilen.Count))
+            {
+                _tani.Yaz("menu_atlandi", ("satir", secilen.Count), ("ocrMs", Ms(ocrMs)));
+                return;
+            }
 
             var eksik = new List<string>();
             _menuKutular = new List<MenuKutusu>();
@@ -100,7 +115,10 @@ namespace Canli
             }
             _algilayici.MenuAcik = true;
             Yenile();
-            if (eksik.Count > 0) await IsteAsync(eksik);
+            int bellekten = _menuKutular.Count(m => m.Tr != null);
+            _tani.Yaz("menu_okundu", ("elle", elle), ("satir", secilen.Count), ("bellekten", bellekten),
+                      ("eksik", eksik.Count), ("ocrMs", Ms(ocrMs)), ("ilkMs", bellekten > 0 ? Ms(ocrMs) : (decimal?)null));
+            if (eksik.Count > 0) await IsteAsync(eksik, "menu", t0);
         }
 
         /// <summary>Ek bölgeleri okur (saniyede bir; menü açıkken çağrılmaz). Görüntü değişmeyen bölge atlanır.</summary>
@@ -125,7 +143,9 @@ namespace Canli
                 {
                     if (imza == _ekImza[i]) continue;
                     _ekImza[i] = imza;
+                    double t0 = _saat();
                     satirlar = _ekranOkuyucu.Oku(temiz);
+                    _tani.Yaz("ek_okundu", ("bolge", i), ("satir", satirlar.Count), ("ocrMs", Ms(_saat() - t0)));
                 }
                 degisti = true;
                 var liste = new List<MenuKutusu>();
@@ -140,15 +160,19 @@ namespace Canli
                 _ekKutular[i] = liste;
             }
             if (degisti) Yenile();
-            if (eksik.Count > 0) { _ = IsteAsync(eksik); }
+            if (eksik.Count > 0) { _ = IsteAsync(eksik, "ek", _saat()); }
         }
 
-        private async Task IsteAsync(List<string> ogeler)
+        private async Task IsteAsync(List<string> ogeler, string tur, double t0)
         {
             foreach (var o in ogeler) _istekte.Add(o);
             MenuSonucu s;
+            double istekBasi = _saat();
             try { s = await _sunucu.MenuAsync(_oyun, _oyunAdi, ogeler); }
             finally { foreach (var o in ogeler) _istekte.Remove(o); }
+            double simdi = _saat();
+            _tani.Yaz("menu_ceviri", ("tur", tur), ("oge", ogeler.Count), ("cevrilen", s.Ceviriler.Count(c => c != null)),
+                      ("istekMs", Ms(simdi - istekBasi)), ("toplamMs", Ms(simdi - t0)), ("hata", s.HataKodu), ("neden", s.Neden));
             if (_durdu()) return;
 
             for (int i = 0; i < ogeler.Count && i < s.Ceviriler.Length; i++)

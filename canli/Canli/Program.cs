@@ -22,6 +22,7 @@ namespace Canli
         private static string _cihazOzeti;
         private static readonly HttpClientHandler Isleyici = new HttpClientHandler();
         private static Calistirici _calistirici;
+        private static DosyaTani _tani;
 
         [STAThread]
         private static int Main(string[] args)
@@ -104,7 +105,14 @@ namespace Canli
                     }
                     if (_cihazOzeti == null) _cihazOzeti = CihazKimligi.Ozet(CihazKimligi.MakineGuidOku());
                     var sunucu = new SunucuIstemcisi(Isleyici, SunucuAdresi, komut.Lisans, _cihazOzeti);
-                    _calistirici = new Calistirici(komut, _cikis, sunucu, _okuyucu);
+                    var saat = System.Diagnostics.Stopwatch.StartNew();
+                    Func<double> saatMs = () => saat.Elapsed.TotalMilliseconds;
+                    if (komut.Tani)
+                    {
+                        try { _tani = new DosyaTani(DosyaTani.VarsayilanKlasor(), saatMs); }
+                        catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) { _tani = null; }
+                    }
+                    _calistirici = new Calistirici(komut, _cikis, sunucu, _okuyucu, _tani, saatMs);
                     _calistirici.Basla().ContinueWith(t => { var _ = t.Exception; Beklenmeyen(); }, CancellationToken.None,
                         TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());
                     break;
@@ -148,11 +156,20 @@ namespace Canli
             _calistirici.Dur(neden);
             _calistirici.Dispose();
             _calistirici = null;
+            TaniKapat();
+        }
+
+        private static void TaniKapat()
+        {
+            if (_tani == null) return;
+            _tani.Dispose();
+            _tani = null;
         }
 
         private static void Cik()
         {
             if (_calistirici != null) { _calistirici.Dispose(); _calistirici = null; }
+            TaniKapat();
             Application.ExitThread();
         }
     }

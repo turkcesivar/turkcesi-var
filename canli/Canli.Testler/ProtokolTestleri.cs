@@ -84,6 +84,17 @@ namespace Canli.Testler
             Assert.Equal(new[] { 0.1, 0.8, 0.8, 0.15 }, k.Profil.AltyaziBolgesi);
             Assert.Single(k.Profil.EkBolgeler);
             Assert.Equal(new[] { 0.0, 0.0, 0.3, 0.1 }, k.Profil.EkBolgeler[0]);
+            Assert.False(k.Tani);
+        }
+
+        [Fact]
+        public void tani_bayragi()
+        {
+            Assert.True(Protokol.KomutSatirindan(new[] { "--lisans", "K", "--tani", "--oyun", "test:x" }).Tani);
+            Assert.True(Protokol.KomutCoz("{\"komut\":\"basla\",\"lisans\":\"K\",\"oyun\":\"o\",\"tani\":true}", out Komut k, out _));
+            Assert.True(k.Tani);
+            Assert.True(Protokol.KomutCoz("{\"komut\":\"basla\",\"lisans\":\"K\",\"oyun\":\"o\"}", out Komut k2, out _));
+            Assert.False(k2.Tani);
         }
 
         [Fact]

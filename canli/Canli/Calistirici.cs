@@ -41,6 +41,7 @@ namespace Canli
         private readonly IEkranKaynagi _ekranlar;
         private readonly Func<double> _saat;
         private readonly Func<int, bool> _tusBasili;
+        private readonly ITaniKaydi _tani;
 
         private readonly AltyaziDurumu _durum;
         private readonly MenuAlgilayici _menu;
@@ -63,20 +64,23 @@ namespace Canli
         private string _cizilenAna, _cizilenOnceki;
         private Rectangle _cizilenKutu;
 
-        public Calistirici(Komut komut, ICikis cikis, SunucuIstemcisi sunucu, Okuyucu okuyucu)
+        public Calistirici(Komut komut, ICikis cikis, SunucuIstemcisi sunucu, Okuyucu okuyucu, ITaniKaydi tani = null, Func<double> saatMs = null)
             : this(komut, cikis, sunucu, new GercekEkranOkuyucu(okuyucu), new OnPlanBekcisi(komut.SurecAdi),
-                   new Kaplamalar(), new WinFormsZamanlayicilar(), new GercekEkranKaynagi(), GercekSaat(), GercekTus)
+                   new Kaplamalar(), new WinFormsZamanlayicilar(), new GercekEkranKaynagi(), saatMs ?? GercekSaat(), GercekTus, tani)
         {
         }
 
         public Calistirici(Komut komut, ICikis cikis, SunucuIstemcisi sunucu, IEkranOkuyucu ekranOkuyucu, OnPlanBekcisi bekci,
-                           IKaplama kaplama, IZamanlayicilar zaman, IEkranKaynagi ekranlar, Func<double> saatMs, Func<int, bool> tusBasili)
+                           IKaplama kaplama, IZamanlayicilar zaman, IEkranKaynagi ekranlar, Func<double> saatMs, Func<int, bool> tusBasili,
+                           ITaniKaydi tani = null)
         {
+            _tani = tani ?? BosTani.Ornek;
             _komut = komut; _cikis = cikis; _sunucu = sunucu; _ekranOkuyucu = ekranOkuyucu; _bekci = bekci;
             _kaplama = kaplama; _zaman = zaman; _ekranlar = ekranlar; _saat = saatMs; _tusBasili = tusBasili;
             _durum = new AltyaziDurumu(saatMs);
             _menu = new MenuAlgilayici(saatMs);
-            _menuHatti = new MenuHatti(komut.Oyun, komut.OyunAdi, sunucu, ekranOkuyucu, kaplama, _menu, HataIsle, () => Durdu);
+            _menuHatti = new MenuHatti(komut.Oyun, komut.OyunAdi, sunucu, ekranOkuyucu, kaplama, _menu, HataIsle, () => Durdu,
+                                       _tani, saatMs);
             _profil = komut.Profil ?? Profil.Varsayilan;
         }
 
@@ -113,6 +117,8 @@ namespace Canli
             }
             _profil = ProfilSec(_komut, bilgi.Profil);
             _kip = _profil.Renk == "beyaz" ? RenkKipi.Beyaz : _profil.Renk == "sari" ? RenkKipi.Sari : RenkKipi.Ikisi;
+            _tani.Yaz("basladi", ("oyun", _komut.Oyun), ("renk", _profil.Renk), ("ekBolge", _profil.EkBolgeler?.Length ?? 0),
+                      ("lisans", lisans.Durum), ("kalan", lisans.Kalan));
             _cikis.Yaz(Protokol.Olay("basladi"));
             _zaman.Baslat(YakalamaTik, YoklamaTik, EkBolgeTik);
         }
@@ -121,6 +127,7 @@ namespace Canli
         {
             if (Durdu || _duraklat) return;
             _duraklat = true;
+            _tani.Yaz("duraklat");
             _menuHatti.Sifirla();
             _kaplama.GizleHepsi();
             DuraklatildiGoster();
@@ -137,6 +144,7 @@ namespace Canli
         {
             if (Durdu || !_duraklat) return;
             _duraklat = false;
+            _tani.Yaz("devam");
             _kaplama.AnaGoster(null, Rectangle.Empty);
             _sonImza = 0;
             _ekranImza = null;
@@ -150,6 +158,7 @@ namespace Canli
             Durdu = true;
             _zaman.Durdur();
             _kaplama.GizleHepsi();
+            _tani.Yaz("durdu", ("neden", neden));
             _cikis.Yaz(Protokol.Olay("durdu", ("neden", neden)));
         }
 
@@ -246,6 +255,7 @@ namespace Canli
         private void AltyaziOku()
         {
             IReadOnlyList<OcrSatiri> satirlar;
+            double t0 = _saat();
             using (var ham = _ekranOkuyucu.Al(_bolge))
             using (var temiz = RenkSuzgeci.Temizle(ham, _kip, RenkEsigi, out long imza, out bool siyah))
             {
@@ -254,19 +264,33 @@ namespace Canli
                 _sonImza = imza;
                 satirlar = _ekranOkuyucu.Oku(temiz);
             }
+            double ocrMs = _saat() - t0;
             string metin = Regex.Replace(string.Join(" ", satirlar.Select(s => s.Metin)), @"\s+", " ").Trim();
             var karar = _durum.Okundu(metin, Birlesim(satirlar));
             if (karar.Tur != KararTuru.YeniSatir) return;
 
             string bellekte = _durum.YerelBellekBul(karar.Metin);
-            if (bellekte != null) _durum.CeviriGeldi(karar.Metin, bellekte);
-            else { _ = CevirAsync(karar.Metin); }
+            if (bellekte != null)
+            {
+                _durum.CeviriGeldi(karar.Metin, bellekte);
+                _tani.Yaz("altyazi", ("en", karar.Metin), ("ocrMs", Ms(ocrMs)), ("istekMs", null),
+                          ("toplamMs", Ms(_saat() - t0)), ("kaynak", "yerel"), ("hata", null));
+            }
+            else { _ = CevirAsync(karar.Metin, t0, ocrMs); }
         }
 
-        private async Task CevirAsync(string en)
+        // decimal: JSON'da 12.3 olarak yazılır (double net48'de 12.299999999999999 olabilir).
+        private static decimal Ms(double ms) { return (decimal)Math.Round(ms, 1); }
+
+        private async Task CevirAsync(string en, double t0, double ocrMs)
         {
             IReadOnlyList<string> baglam = _durum.Baglam;
+            double istekBasi = _saat();
             CeviriSonucu s = await _sunucu.CeviriAsync(_komut.Oyun, _komut.OyunAdi, en, baglam);
+            double simdi = _saat();
+            _tani.Yaz("altyazi", ("en", en), ("ocrMs", Ms(ocrMs)), ("istekMs", Ms(simdi - istekBasi)),
+                      ("toplamMs", Ms(simdi - t0)), ("kaynak", s.HataKodu != null ? null : s.Okunamaz ? "okunamaz" : s.Kaynak),
+                      ("hata", s.HataKodu));
             if (Durdu) return;
             if (s.HataKodu != null)
             {
@@ -298,6 +322,7 @@ namespace Canli
             _tuslar.Clear();
             if (_arkada) return;
             _arkada = true;
+            _tani.Yaz("arkada");
             _menuHatti.Sifirla();
             _kaplama.GizleHepsi();
             _cizildi = false;
@@ -333,6 +358,7 @@ namespace Canli
         private void HataIsle(string kod)
         {
             if (Durdu) return;
+            _tani.Yaz("sunucu_hatasi", ("kod", kod));
             if (HataYonetimi.DurduranMi(kod))
             {
                 _cikis.Yaz(Protokol.Olay("hata", ("kod", kod)));

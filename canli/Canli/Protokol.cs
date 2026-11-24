@@ -40,6 +40,8 @@ namespace Canli
         /// <summary>Profil komutta açıkça verildi mi (verilmediyse sunucunun profili kullanılır).</summary>
         public bool ProfilVerildi;
         public string SurecAdi;
+        /// <summary>Tanı kaydı açık mı (--tani ya da "tani": true).</summary>
+        public bool Tani;
     }
 
     /// <summary>Olay satırlarının yazıldığı tek kanal.</summary>
@@ -101,6 +103,7 @@ namespace Canli
                         Oyun = Metin(kok, "oyun"),
                         OyunAdi = Metin(kok, "oyunAdi"),
                         SurecAdi = Metin(kok, "sureciAdi"),
+                        Tani = kok.TryGetProperty("tani", out JsonElement t) && t.ValueKind == JsonValueKind.True,
                         Profil = Profil.Varsayilan
                     };
                     if (kok.TryGetProperty("profil", out JsonElement p) && p.ValueKind == JsonValueKind.Object)
@@ -149,7 +152,7 @@ namespace Canli
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
-                if (a == "--tani") continue;
+                if (a == "--tani") { k.Tani = true; continue; }
                 if (!a.StartsWith("--", StringComparison.Ordinal))
                     throw new ArgumentException("Beklenmeyen argüman: " + a);
                 if (i + 1 >= args.Length) throw new ArgumentException("Değer eksik: " + a);

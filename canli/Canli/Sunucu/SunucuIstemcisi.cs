@@ -106,6 +106,7 @@ namespace Canli
                     if (k.TryGetProperty("okunamaz", out var o) && o.ValueKind == JsonValueKind.True)
                         return new CeviriSonucu { Okunamaz = true };
                     var sonuc = new CeviriSonucu { Tr = k.GetProperty("tr").GetString() };
+                    if (k.TryGetProperty("kaynak", out var kay) && kay.ValueKind == JsonValueKind.String) sonuc.Kaynak = kay.GetString();
                     if (k.TryGetProperty("kalan", out var kal) && kal.ValueKind == JsonValueKind.Number)
                         sonuc.Kalan = kal.GetInt32();
                     return sonuc;
