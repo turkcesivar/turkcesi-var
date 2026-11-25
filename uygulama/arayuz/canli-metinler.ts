@@ -82,6 +82,10 @@ export const hileEngel = (oyunAdi: string) => `${oyunAdi} hile korumalı olduğu
 export const DENEME_KARTI = "Deneme başladı: 7 gün, 2.000 yeni satır. Sorun, öneri ve yeni oyunlar için Discord'a katıl.";
 export const DENEME_DAVETI = "Sorun, öneri ve yeni oyunlar için Discord'a katıl.";
 export const ESLESTIRME_ACIKLAMA_SON = "Ödemen gelince canlı çeviri bu bilgisayarda kendiliğinden açılır.";
+export const DENEME_DESTEK_ACIKLAMA =
+  "Denemeyi beğendiysen destekçi olarak devam edebilirsin: aylık 75 ₺ ile ayda 20.000, aylık 200 ₺ ile 50.000 yeni satır. Ödemen gelince bu bilgisayar kendiliğinden destekçi lisansına geçer; denemenin kalan günlerini beklemen gerekmez.";
+export const DENEME_HAK_BITTI =
+  "Deneme hakkın doldu. Daha önce çevrilmiş satırlar görünmeye devam eder; yeni satırlar için destekçi olarak devam edebilirsin.";
 export const ESLESTIRME_BASKA_BILGISAYAR =
   "Başka bir bilgisayarda zaten destekçiysen ödeme yapma: o bilgisayarda Canlı Çeviri → \"Başka bilgisayar ekle\" kısmına bu numarayı yaz.";
 export const CIHAZ_EKLE_ACIKLAMA =

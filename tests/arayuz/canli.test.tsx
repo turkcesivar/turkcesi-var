@@ -295,4 +295,40 @@ describe("Canlı Çeviri sayfası", () => {
     fireEvent.click(screen.getByRole("button", { name: /Bilgisayarı ekle/ }));
     expect(await screen.findByText(kodMetni("numara_yok"))).toBeTruthy();
   });
+  it("denemede_destek_ol_numara_alir_ve_gosterir", async () => {
+    const deneme: CanliDurum = { ...taban, lisans: { durum: "etkin", tur: "deneme", kalan: 1500 } };
+    const tv = kur(deneme);
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Destekçi ol/ }));
+    await waitFor(() => expect(tv.canliEslestir).toHaveBeenCalled());
+    cleanup();
+    kur({ ...deneme, eslesme: { numara: "TV-7K2M", bitis: Date.now() + 3600_000 } });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    expect(await screen.findByText("TV-7K2M")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Kreosus/ })).toBeTruthy();
+    // Deneme sürerken Başlat düğmesi de yerinde.
+    expect(screen.getByRole("button", { name: /Canlı Çeviriyi Başlat/ })).toBeTruthy();
+  });
+
+  it("denemede_hak_bitince_ek_hak_degil_destekci_ol", async () => {
+    kur({ ...taban, lisans: { durum: "hak_bitti", tur: "deneme", kalan: 0 } });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    expect(await screen.findByRole("button", { name: /Destekçi ol/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Ek hak al/ })).toBeNull();
+  });
+
+  it("destekcide_destek_ol_karti_yok", async () => {
+    kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 50 } });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    await screen.findByRole("heading", { name: /Destekçi/ });
+    expect(screen.queryByRole("button", { name: /Destekçi ol/ })).toBeNull();
+  });
+  it("denemede_destek_ol_hatasi_gosterilir", async () => {
+    kur({ ...taban, lisans: { durum: "etkin", tur: "deneme", kalan: 1500 } }, {
+      canliEslestir: vi.fn(() => Promise.resolve({ hata: "hiz" })),
+    });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Destekçi ol/ }));
+    expect(await screen.findByText(kodMetni("hiz"))).toBeTruthy();
+  });
 });

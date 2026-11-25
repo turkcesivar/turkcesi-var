@@ -7,7 +7,7 @@ import { Bildirim, Dugme, Iskelet, sayi } from "../bilesenler/temel.js";
 import { useYumusakKapat } from "../bilesenler/yumusak.js";
 import {
   DENEME_DAVETI, DENEME_KARTI, DIL_ACIKLAMA, DIL_ADIMLAR, DIL_BASLIK, DIL_GELISMIS, DIL_GEREKLI_IPUCU, DIL_KOMUTU, DIL_WIN10,
-  CIHAZ_EKLE_ACIKLAMA, CIHAZ_EKLENDI, ESLESTIRME_ACIKLAMA_SON, ESLESTIRME_BASKA_BILGISAYAR, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
+  CIHAZ_EKLE_ACIKLAMA, CIHAZ_EKLENDI, DENEME_DESTEK_ACIKLAMA, DENEME_HAK_BITTI, ESLESTIRME_ACIKLAMA_SON, ESLESTIRME_BASKA_BILGISAYAR, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
   SINIRLAR, SINIRLAR_BASLIK, SURE_BITTI, durumSatiri, hileEngel, kodMetni, paketliEngel,
 } from "../canli-metinler.js";
 import { DESTEK_ADRESI, DISCORD_ADRESI } from "../sabitler.js";
@@ -140,6 +140,41 @@ function Cubuk({ etiket, kalan, tavan }: { etiket: string; kalan: number; tavan:
         <div className="ilerleme-dolgu" style={{ width: `${yuzde}%` }} />
       </div>
     </div>
+  );
+}
+
+/** Deneme sürerken (ya da hakkı bitince) destekçiliğe geçiş: numara al, Kreosus'ta mesaja yaz. */
+function DenemedenDestekci({
+  eslesme, hakBitti, isleniyor, eslestir,
+}: { eslesme?: { numara: string }; hakBitti: boolean; isleniyor: boolean; eslestir: () => void }) {
+  return (
+    <section className="panel" aria-label="Destekçi ol">
+      <h2 className="panel-baslik">
+        <Simge ad="kalp" /> Destekçi olarak devam et
+      </h2>
+      <p>{hakBitti ? DENEME_HAK_BITTI : DENEME_DESTEK_ACIKLAMA}</p>
+      {eslesme ? (
+        <div className="canli-eslesme">
+          <p>
+            Eşleştirme numaran: <strong className="canli-numara">{eslesme.numara}</strong> — Kreosus&apos;ta destek olurken bu numarayı mesaj kısmına yaz. {ESLESTIRME_ACIKLAMA_SON}
+          </p>
+          <div className="eylemler">
+            <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
+              Kreosus&apos;u aç
+            </Dugme>
+            <Dugme tur="ikincil" simge="sohbet" onClick={() => ac(DISCORD_ADRESI)}>
+              Discord&apos;da destek ol
+            </Dugme>
+          </div>
+        </div>
+      ) : (
+        <div className="eylemler">
+          <Dugme tur={hakBitti ? "ana" : "ikincil"} simge="kalp" pasif={isleniyor} onClick={eslestir}>
+            Destekçi ol
+          </Dugme>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -390,7 +425,8 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
     const tur = l.tur ?? "deneme";
     const tavan = SEVIYE_TAVAN[tur];
     const acik = d.calisma !== "kapali";
-    const sorun = d.uyari ?? d.hata ?? d.sunucuHatasi;
+    // hata: bu ekranda başlatılan bir işlemin (ör. Destekçi ol) sonucu.
+    const sorun = hata ?? d.uyari ?? d.hata ?? d.sunucuHatasi;
     const gunBitti = l.gunKalan === 0;
     const hakBlogu = l.durum === "hak_bitti";
     const gunBlogu = !hakBlogu && gunBitti;
@@ -457,7 +493,15 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             )}
           </Bildirim>
         )}
-        {hakBlogu && (
+        {tur === "deneme" && (
+          <DenemedenDestekci
+            eslesme={d.eslesme}
+            hakBitti={hakBlogu}
+            isleniyor={isleniyor}
+            eslestir={() => void islem(() => window.tv.canliEslestir())}
+          />
+        )}
+        {hakBlogu && tur !== "deneme" && (
           <Bildirim tur="uyari">
             <p>{HAK_BITTI}</p>
             <div className="eylemler">
