@@ -23,6 +23,31 @@ namespace Canli.Testler
             public Rectangle PencereDikdortgeni(IntPtr h) { return Pencere; }
         }
 
+        // Metro tanı kaydı (20:14): geri gelen satır ve aynı çevirisi olan yeni okuma kutuda iki kez görünüyordu.
+        [Fact]
+        public void alt_alta_ayni_ceviri_iki_kez_gorunmez()
+        {
+            _t = 0;
+            var d = Yeni();
+            d.Okundu("YERMAK: A mutant?! Watchman!", _kutu);
+            _t = 500; d.CeviriGeldi("YERMAK: A mutant?! Watchman!", "YERMAK: Bir mutant mu?! Bekçi!");
+            _t = 1000; d.Okundu("YERMAK: Whaaaa", _kutu);
+            _t = 1500; d.CeviriGeldi("YERMAK: Whaaaa", "YERMAK: Vaaay!");
+            _t = 1700; d.Okundu("", _kutu);
+            _t = 1900; d.Okundu("YERMAK: A mutant?! Watchman!", _kutu);   // eski satır geri geldi
+            var satirlar = d.Simdi().AnaMetin.Split('\n');
+            Assert.Equal(satirlar.Length, satirlar.Distinct().Count());
+            Assert.Equal("YERMAK: Bir mutant mu?! Bekçi!", satirlar.Last());
+
+            // Aynı satırın farklı okuması yeni satır sayılsa da aynı Türkçe ikinci kez eklenmez.
+            _t = 2500; d.Okundu("WORKER: What's with that mumbling? SPEAKER: Team leader", _kutu);
+            _t = 3000; d.CeviriGeldi("WORKER: What's with that mumbling? SPEAKER: Team leader", "WORKER: Bu mırıldanma da ne?");
+            _t = 3200; d.Okundu("WORKER: What's with that mumbling?", _kutu);
+            _t = 3300; d.CeviriGeldi("WORKER: What's with that mumbling?", "WORKER: Bu mırıldanma da ne?");
+            satirlar = d.Simdi().AnaMetin.Split('\n');
+            Assert.Equal(satirlar.Length, satirlar.Distinct().Count());
+        }
+
         [Fact]
         public void benzerlik_titreme_ayni_satir()
         {

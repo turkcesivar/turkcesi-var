@@ -203,10 +203,12 @@ namespace Canli.Mantik
 
         private void AnaGoster(string tr, Rectangle kutu, double simdi, Satir satir)
         {
-            // Konuşmalar alt alta birikir: aynı satırın yeni çevirisi kendi yerini günceller, başka satırınki eklenir.
-            var son = _gecmis.Count > 0 ? _gecmis[_gecmis.Count - 1] : null;
-            if (son != null && son.Satir == satir) { son.Tr = tr; son.Zaman = simdi; }
-            else _gecmis.Add(new Gosterilen { Satir = satir, Tr = tr, Zaman = simdi });
+            // Konuşmalar alt alta birikir. Aynı satır (geri gelen ya da yeniden çevrilen) ya da aynı/çok benzer
+            // Türkçe (aynı altyazının farklı okuması) listede ikinci kez yer almaz: eskisi çıkar, en alta yenisi gelir.
+            // Benzerlik değil birebir harf eşitliği: kısa, benzer ama farklı konuşmalar ("Satır 2"/"Satır 3") silinmesin.
+            string trHarf = Benzerlik.Harfler(tr);
+            _gecmis.RemoveAll(g => g.Satir == satir || Benzerlik.Harfler(g.Tr) == trHarf);
+            _gecmis.Add(new Gosterilen { Satir = satir, Tr = tr, Zaman = simdi });
             while (_gecmis.Count > EnCokKonusma) _gecmis.RemoveAt(0);
             _ana = tr; _anaTurkce = true; _anaKutu = kutu;
             _sonTr = tr; _sonTrSatir = satir; _sonTrZaman = simdi; _gizleZaman = 0;
