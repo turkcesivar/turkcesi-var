@@ -257,6 +257,25 @@ namespace Canli.Testler
             Assert.Single(p.EkBolgeler);
         }
 
+        [Fact]
+        public async Task onbellek_isabeti_sunucuya_gitmez()
+        {
+            var s = new Sahneler("{\"tr\":\"x\"}",
+                bellekGovdesi: "{\"surum\":\"1-1\",\"satirlar\":[[\"We have to go now, Enzo.\",\"Şimdi gitmeliyiz, Enzo.\",\"a\"]]}");
+            var tani = new SahteTani();
+            var c = s.Calistirici(new OnPlanBekcisi(""), tani: tani);
+            await c.Basla();
+            Assert.True(SpinWait.SpinUntil(() => c.OnBellekSayisi == 1, 5000));
+            Assert.Contains(tani.Satirlar(), l => l.Contains("\"on_bellek\"") && l.Contains("\"kaynak\":\"sunucu\""));
+
+            s.Ekran.Satirlar = new[] { "We have to go now, Enz0." };
+            c.YakalamaTik();
+            c.YoklamaTik();
+            Assert.Equal("Şimdi gitmeliyiz, Enzo.", s.Kaplama.Ana);
+            Assert.Equal(0, s.CeviriIstegi);
+            Assert.Contains(tani.Satirlar(), l => l.Contains("\"altyazi\"") && l.Contains("\"kaynak\":\"onbellek\""));
+        }
+
         // ---- Tanı kaydı ----
 
         [Fact]
@@ -350,15 +369,18 @@ namespace Canli.Testler
             public readonly SahteKaplama Kaplama = new SahteKaplama();
             public readonly SahteZamanlayicilar Zaman = new SahteZamanlayicilar();
             public readonly SunucuIstemcisi Sunucu;
+            public int CeviriIstegi;
             private double _t;
 
             public Sahneler(string ceviriYaniti, HttpStatusCode ceviriDurumu = HttpStatusCode.OK, string ceviriGovdesi = null,
                             string oyunGovdesi = "{\"durum\":\"acik\"}",
-                            HttpStatusCode durumDurumu = HttpStatusCode.OK, string durumGovdesi = "{\"durum\":\"etkin\"}")
+                            HttpStatusCode durumDurumu = HttpStatusCode.OK, string durumGovdesi = "{\"durum\":\"etkin\"}",
+                            string bellekGovdesi = "{\"surum\":\"0-0\",\"satirlar\":[]}")
             {
                 var isleyici = new SahteIsleyici(yol =>
                 {
-                    if (yol.EndsWith("/ceviri")) return (ceviriDurumu, ceviriGovdesi ?? ceviriYaniti);
+                    if (yol.Contains("/bellek/")) return (HttpStatusCode.OK, bellekGovdesi);
+                    if (yol.EndsWith("/ceviri")) { Interlocked.Increment(ref CeviriIstegi); return (ceviriDurumu, ceviriGovdesi ?? ceviriYaniti); }
                     if (yol.Contains("/oyun/")) return (HttpStatusCode.OK, oyunGovdesi);
                     if (yol.EndsWith("/durum")) return (durumDurumu, durumGovdesi);
                     return (HttpStatusCode.OK, "{\"ceviriler\":[]}");

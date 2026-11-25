@@ -69,6 +69,37 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public async Task bellek_indirilir_ve_surum_gonderilir()
+        {
+            var h = new SahteIsleyici
+            {
+                Yanit = (i, g) => (HttpStatusCode.OK, "{\"surum\":\"2-5\",\"satirlar\":[[\"Hi.\",\"Selam.\",\"a\"],[\"Options\",\"Seçenekler\",\"m\"],[1,2,3]]}")
+            };
+            var y = await Yap(h).BellekAsync("steam:1", "1-1");
+            Assert.Null(y.HataKodu);
+            Assert.Equal("2-5", y.Surum);
+            Assert.False(y.Degismedi);
+            Assert.Equal(2, y.Satirlar.Count);
+            Assert.Contains(("Options", "Seçenekler", true), y.Satirlar);
+            Assert.EndsWith("/bellek/steam%3A1?surum=1-1", h.Istekler[0].istek.RequestUri.AbsoluteUri);
+            Assert.Equal(HttpMethod.Get, h.Istekler[0].istek.Method);
+        }
+
+        [Fact]
+        public async Task bellek_degismedi_ve_hata()
+        {
+            var h = new SahteIsleyici { Yanit = (i, g) => (HttpStatusCode.OK, "{\"surum\":\"2-5\",\"degismedi\":true}") };
+            var y = await Yap(h).BellekAsync("steam:1", "2-5");
+            Assert.True(y.Degismedi);
+            Assert.Null(y.Satirlar);
+            Assert.EndsWith("/bellek/steam%3A1?surum=2-5", h.Istekler[0].istek.RequestUri.AbsoluteUri);
+
+            h.Yanit = (i, g) => ((HttpStatusCode)429, "{\"hata\":\"hiz\"}");
+            Assert.Equal("hiz", (await Yap(h).BellekAsync("steam:1", null)).HataKodu);
+            Assert.EndsWith("/bellek/steam%3A1", h.Istekler[1].istek.RequestUri.AbsoluteUri);
+        }
+
+        [Fact]
         public async Task basliklar_dogru()
         {
             var h = new SahteIsleyici { Yanit = (i, g) => (HttpStatusCode.OK, "{\"tr\":\"Merhaba\",\"kaynak\":\"model\",\"okunamaz\":false,\"kalan\":7}") };

@@ -31,12 +31,19 @@ Profil bölgeleri ekranın içinde ve boyutu sıfırdan büyük olmalıdır; ge�
 
 Komut satırından deneme: `canli.exe --lisans K --oyun ID --oyunAdi AD [--renk sari] [--bolge x,y,g,y2] [--ek x,y,g,y2] [--surec Oyun.exe] [--tani]`
 
+## Önceden indirilen bellek
+
+`basladi`dan sonra oyunun ortak belleği arka planda iner (`GET /bellek/<oyun>`, lisanslı): önce disk önbelleği
+`%LOCALAPPDATA%\TurkcesiVar\canliellek\` (anında), sonra sunucu (yalnız sürüm değiştiyse gövde gelir). Altyazı ve
+menü satırları sunucuya gitmeden önce bu bellekte aranır (sadeleştirilmiş tam eşleşme, yoksa üçlü harf dizininden
+seçilen ≤ 40 aday arasında ≥ 0,85 benzerlik; "AD: metin" önekli satırlar adsız da aranır). İnmezse çeviri sunucudan sürer.
+
 ## Tanı kaydı
 
 `--tani` (ya da `basla` komutunda `"tani": true`) verilirse her olay
 `%LOCALAPPDATA%\TurkcesiVar\canli\tani\<yyyyMMdd-HHmmss>.jsonl` dosyasına bir JSON satırı olarak yazılır
 (`t` = oturum başından ms). Olaylar: `basladi`, `altyazi` (`en`, `ocrMs`, `istekMs`, `toplamMs`,
-`kaynak` = yerel/bellek/model/okunamaz, `hata`), `menu_okundu`, `menu_atlandi`, `menu_ceviri`, `ek_okundu`,
+`kaynak` = onbellek/yerel/bellek/model/okunamaz, `hata`), `on_bellek` (`satir`, `kaynak` = disk/sunucu/degismedi/hata, `ms`), `menu_okundu`, `menu_atlandi`, `menu_ceviri`, `ek_okundu`,
 `sunucu_hatasi`, `arkada`, `duraklat`, `devam`, `menu_kapandi`, `durdu`. Kayıt stdout protokolüne karışmaz.
 
 ## Ölçümler

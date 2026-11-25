@@ -19,6 +19,15 @@ namespace Canli
         public string HataKodu;
     }
 
+    /// <summary>GET /bellek/:oyun yanıtı: satırlar (en, tr, menü mü) ya da Degismedi.</summary>
+    public sealed class BellekYaniti
+    {
+        public string Surum;
+        public bool Degismedi;
+        public System.Collections.Generic.List<(string en, string tr, bool menu)> Satirlar;
+        public string HataKodu;
+    }
+
     /// <summary>GET /durum yanıtı: Durum "lisanssiz" | "etkin" | "hak_bitti" | "suresi_bitti".</summary>
     public sealed class LisansDurumu
     {

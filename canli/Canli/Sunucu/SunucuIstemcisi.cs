@@ -31,6 +31,8 @@ namespace Canli
 
         /// <summary>İstek başına zaman aşımı (testler kısaltabilir).</summary>
         public TimeSpan ZamanAsimi = TimeSpan.FromSeconds(10);
+        /// <summary>Oyun belleği indirmesi büyük olabilir (birkaç MB): daha uzun süre tanınır.</summary>
+        public TimeSpan BellekZamanAsimi = TimeSpan.FromSeconds(60);
 
         static SunucuIstemcisi()
         {
@@ -115,6 +117,26 @@ namespace Canli
             }
         }
 
+        /// <summary>GET /bellek/:oyun — oyunun ortak belleği; surum aynıysa Degismedi.</summary>
+        public async Task<BellekYaniti> BellekAsync(string oyun, string surum)
+        {
+            string yol = "bellek/" + Uri.EscapeDataString(oyun ?? "") + (string.IsNullOrEmpty(surum) ? "" : "?surum=" + Uri.EscapeDataString(surum));
+            var (hata, kok) = await IstekAsync(HttpMethod.Get, yol, null, BellekZamanAsimi);
+            using (kok)
+            {
+                if (hata != null) return new BellekYaniti { HataKodu = hata };
+                try
+                {
+                    var k = kok.RootElement;
+                    var y = new BellekYaniti { Surum = k.GetProperty("surum").GetString() };
+                    if (k.TryGetProperty("degismedi", out var d) && d.ValueKind == JsonValueKind.True) y.Degismedi = true;
+                    else y.Satirlar = Canli.Mantik.OnBellekDiski.SatirlariOku(k.GetProperty("satirlar"));
+                    return y;
+                }
+                catch (Exception) { return new BellekYaniti { HataKodu = "gecici_hata" }; }
+            }
+        }
+
         public async Task<MenuSonucu> MenuAsync(string oyun, string oyunAdi, IReadOnlyList<string> ogeler)
         {
             int n = ogeler == null ? 0 : ogeler.Count;
@@ -191,11 +213,11 @@ namespace Canli
         }
 
         /// <summary>Tek istek. Başarıda (null, gövde); hatada (hataKodu, null).</summary>
-        private async Task<(string hata, JsonDocument kok)> IstekAsync(HttpMethod yontem, string yol, object govde)
+        private async Task<(string hata, JsonDocument kok)> IstekAsync(HttpMethod yontem, string yol, object govde, TimeSpan? sure = null)
         {
             try
             {
-                using (var iptal = new CancellationTokenSource(ZamanAsimi))
+                using (var iptal = new CancellationTokenSource(sure ?? ZamanAsimi))
                 using (var istek = new HttpRequestMessage(yontem, yol))
                 {
                     istek.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _lisans);

@@ -42,6 +42,8 @@ namespace Canli
         private readonly Func<double> _saat;
         private readonly Func<int, bool> _tusBasili;
         private readonly ITaniKaydi _tani;
+        private readonly OnBellek _onBellek = new OnBellek();
+        private readonly OnBellekDiski _disk;
 
         private readonly AltyaziDurumu _durum;
         private readonly MenuAlgilayici _menu;
@@ -66,25 +68,30 @@ namespace Canli
 
         public Calistirici(Komut komut, ICikis cikis, SunucuIstemcisi sunucu, Okuyucu okuyucu, ITaniKaydi tani = null, Func<double> saatMs = null)
             : this(komut, cikis, sunucu, new GercekEkranOkuyucu(okuyucu), new OnPlanBekcisi(komut.SurecAdi),
-                   new Kaplamalar(), new WinFormsZamanlayicilar(), new GercekEkranKaynagi(), saatMs ?? GercekSaat(), GercekTus, tani)
+                   new Kaplamalar(), new WinFormsZamanlayicilar(), new GercekEkranKaynagi(), saatMs ?? GercekSaat(), GercekTus, tani,
+                   new OnBellekDiski(OnBellekDiski.VarsayilanKlasor()))
         {
         }
 
         public Calistirici(Komut komut, ICikis cikis, SunucuIstemcisi sunucu, IEkranOkuyucu ekranOkuyucu, OnPlanBekcisi bekci,
                            IKaplama kaplama, IZamanlayicilar zaman, IEkranKaynagi ekranlar, Func<double> saatMs, Func<int, bool> tusBasili,
-                           ITaniKaydi tani = null)
+                           ITaniKaydi tani = null, OnBellekDiski disk = null)
         {
             _tani = tani ?? BosTani.Ornek;
+            _disk = disk;
             _komut = komut; _cikis = cikis; _sunucu = sunucu; _ekranOkuyucu = ekranOkuyucu; _bekci = bekci;
             _kaplama = kaplama; _zaman = zaman; _ekranlar = ekranlar; _saat = saatMs; _tusBasili = tusBasili;
             _durum = new AltyaziDurumu(saatMs);
             _menu = new MenuAlgilayici(saatMs);
             _menuHatti = new MenuHatti(komut.Oyun, komut.OyunAdi, sunucu, ekranOkuyucu, kaplama, _menu, HataIsle, () => Durdu,
-                                       _tani, saatMs);
+                                       _tani, saatMs, _onBellek);
             _profil = ProfilSec(komut, null);
         }
 
         public bool Durdu { get; private set; }
+
+        /// <summary>Önceden indirilen bellekteki satır sayısı (tanı ve sınama için).</summary>
+        public int OnBellekSayisi { get { return _onBellek.Sayi; } }
 
         /// <summary>/oyun sorulur: paketli/yasakli ya da lisans hatasında başlamaz; yoksa "basladi" ve zamanlayıcılar.</summary>
         public async Task Basla()
@@ -121,6 +128,45 @@ namespace Canli
                       ("lisans", lisans.Durum), ("kalan", lisans.Kalan));
             _cikis.Yaz(Protokol.Olay("basladi"));
             _zaman.Baslat(YakalamaTik, YoklamaTik, EkBolgeTik);
+            // Oyun belleği arka planda iner; çeviri beklemeden başlar (inene kadar satırlar sunucudan gelir).
+            _ = Task.Run(OnBellekYukleAsync);
+        }
+
+        /// <summary>Önce disk önbelleği (anında), sonra sunucu (yalnız sürüm değiştiyse gövde gelir).</summary>
+        private async Task OnBellekYukleAsync()
+        {
+            try
+            {
+                double t0 = _saat();
+                string surum = null;
+                var diskte = _disk?.Oku(_komut.Oyun);
+                if (diskte.HasValue)
+                {
+                    surum = diskte.Value.surum;
+                    _onBellek.Yukle(diskte.Value.satirlar);
+                    _tani.Yaz("on_bellek", ("satir", _onBellek.Sayi), ("kaynak", "disk"), ("ms", Ms(_saat() - t0)));
+                }
+                if (Durdu) return;
+                BellekYaniti y = await _sunucu.BellekAsync(_komut.Oyun, surum).ConfigureAwait(false);
+                if (Durdu) return;
+                if (y.HataKodu != null)
+                {
+                    _tani.Yaz("on_bellek", ("satir", _onBellek.Sayi), ("kaynak", "hata"), ("hata", y.HataKodu), ("ms", Ms(_saat() - t0)));
+                    return;
+                }
+                if (y.Degismedi)
+                {
+                    _tani.Yaz("on_bellek", ("satir", _onBellek.Sayi), ("kaynak", "degismedi"), ("ms", Ms(_saat() - t0)));
+                    return;
+                }
+                _onBellek.Yukle(y.Satirlar);
+                _disk?.Yaz(_komut.Oyun, y.Surum, y.Satirlar);
+                _tani.Yaz("on_bellek", ("satir", _onBellek.Sayi), ("kaynak", "sunucu"), ("ms", Ms(_saat() - t0)));
+            }
+            catch (Exception)
+            {
+                // Bellek inmezse çeviri sunucudan sürer.
+            }
         }
 
         public void Duraklat()
@@ -269,6 +315,15 @@ namespace Canli
             string metin = Regex.Replace(string.Join(" ", satirlar.Select(s => s.Metin)), @"\s+", " ").Trim();
             var karar = _durum.Okundu(metin, Birlesim(satirlar));
             if (karar.Tur != KararTuru.YeniSatir) return;
+
+            string hazir = _onBellek.AltyaziBul(karar.Metin);
+            if (hazir != null)
+            {
+                _durum.CeviriGeldi(karar.Metin, hazir);
+                _tani.Yaz("altyazi", ("en", karar.Metin), ("ocrMs", Ms(ocrMs)), ("istekMs", null),
+                          ("toplamMs", Ms(_saat() - t0)), ("kaynak", "onbellek"), ("hata", null));
+                return;
+            }
 
             string bellekte = _durum.YerelBellekBul(karar.Metin);
             if (bellekte != null)

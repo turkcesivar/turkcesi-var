@@ -30,6 +30,7 @@ namespace Canli
         private readonly Action<string> _hata;     // sunucu hata kodu → çalıştırıcı
         private readonly Func<bool> _durdu;
         private readonly ITaniKaydi _tani;
+        private readonly OnBellek _onBellek;
         private readonly Func<double> _saat;
 
         // Süreç içi menü çeviri belleği (tam metin → çeviri; "" = çevrilmez). Yeniden açılan ekran anında dolar.
@@ -42,8 +43,9 @@ namespace Canli
 
         public MenuHatti(string oyun, string oyunAdi, SunucuIstemcisi sunucu, IEkranOkuyucu ekranOkuyucu, IKaplama kaplama,
                          MenuAlgilayici algilayici, Action<string> hata, Func<bool> durdu,
-                         ITaniKaydi tani = null, Func<double> saatMs = null)
+                         ITaniKaydi tani = null, Func<double> saatMs = null, OnBellek onBellek = null)
         {
+            _onBellek = onBellek;
             _oyun = oyun; _oyunAdi = oyunAdi; _sunucu = sunucu; _ekranOkuyucu = ekranOkuyucu;
             _kaplama = kaplama; _algilayici = algilayici; _hata = hata; _durdu = durdu;
             _tani = tani ?? BosTani.Ornek;
@@ -110,7 +112,7 @@ namespace Canli
             _menuKutular = new List<MenuKutusu>();
             foreach (var s in secilen)
             {
-                _bellek.TryGetValue(s.Metin, out string tr);
+                if (!_bellek.TryGetValue(s.Metin, out string tr)) tr = _onBellek?.MenuBul(s.Metin);
                 _menuKutular.Add(new MenuKutusu { En = s.Metin, Kutu = s.Kutu, Tr = tr });
                 if (tr == null && !_istekte.Contains(s.Metin) && !eksik.Contains(s.Metin)) eksik.Add(s.Metin);
             }
@@ -192,6 +194,8 @@ namespace Canli
         private string BellektenBul(string en)
         {
             if (_bellek.TryGetValue(en, out string tr)) return tr;
+            string hazir = _onBellek?.MenuBul(en) ?? _onBellek?.AltyaziBul(en);
+            if (hazir != null) return hazir;
             foreach (var k in _bellek)
                 if (Benzerlik.Oran(k.Key, en) >= EkBellekEsigi) return k.Value;
             return null;
