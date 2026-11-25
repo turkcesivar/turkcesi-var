@@ -18,8 +18,17 @@ import { cihazOzeti, makineGuidOku } from "../../src/canli/cihaz.js";
 import { LisansDeposu } from "../../src/canli/lisans-deposu.js";
 import { CanliSunucu } from "../../src/canli/sunucu.js";
 import { CanliYonetici } from "../../src/canli/yonetici.js";
+import { ocrDenetle } from "../../src/canli/ocr-denetimi.js";
 import type { CanliDurum } from "../../src/canli/tipler.js";
-import { canliExeYolu, canliSurecBaslat, gercekSifreleyici, surecAcikMiAsenkron, yenidenDenenirSoz, yoneticiyiAc } from "./canli.js";
+import {
+  canliExeYolu,
+  canliSurecBaslat,
+  DIL_AYARLARI_ADRESI,
+  gercekSifreleyici,
+  surecAcikMiAsenkron,
+  yenidenDenenirSoz,
+  yoneticiyiAc,
+} from "./canli.js";
 
 const burasi = dirname(fileURLToPath(import.meta.url));
 const KLASOR = uygulamaKlasoru();
@@ -50,6 +59,7 @@ function canliKur(): Promise<CanliYonetici> {
       sunucu: new CanliSunucu({ taban: "https://api.turkcesivar.com", cihaz: cihazOzeti(guid) }),
       depo: new LisansDeposu(join(KLASOR, "canli-lisans.json"), gercekSifreleyici(safeStorage)),
       baslat: () => canliSurecBaslat(canliExeYolu(gelistirme, app.getAppPath(), process.resourcesPath)),
+      ocrDenetle: () => ocrDenetle(() => canliSurecBaslat(canliExeYolu(gelistirme, app.getAppPath(), process.resourcesPath))),
       oyunlar: () => sonListe,
       surecAcikMi: surecAcikMiAsenkron,
       ...(!app.isPackaged && process.env.TV_CANLI_TEST_OYUNU ? { testOyunu: process.env.TV_CANLI_TEST_OYUNU } : {}),
@@ -280,6 +290,8 @@ function ipcKur() {
   ipcMain.handle("tv:canliEslestir", async () => (await canliHazir()).eslestirBaslat());
   ipcMain.handle("tv:canliBaslat", async () => (await canliHazir()).calistir());
   ipcMain.handle("tv:canliDurdur", async () => (await canliHazir()).durdur());
+  ipcMain.handle("tv:canliDilDenetle", async () => (await canliHazir()).dilDenetle());
+  ipcMain.handle("tv:canliDilAyarlari", () => shell.openExternal(DIL_AYARLARI_ADRESI));
 }
 
 void app.whenReady().then(() => {

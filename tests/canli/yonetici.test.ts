@@ -80,6 +80,7 @@ interface KurSecenekleri {
   durum?: (l: string | null, n?: string) => DurumYaniti;
   acik?: () => boolean;
   testOyunu?: string;
+  ocr?: () => Promise<boolean | null>;
 }
 
 function kur(o: KurSecenekleri = {}) {
@@ -95,6 +96,7 @@ function kur(o: KurSecenekleri = {}) {
     oyunlar: () => o.oyunlar ?? [],
     surecAcikMi: acik,
     testOyunu: o.testOyunu,
+    ocrDenetle: o.ocr,
   });
   return { y, surec, depo, sunucu, acik, baslat };
 }
@@ -109,6 +111,48 @@ afterEach(() => {
 });
 
 describe("CanliYonetici", () => {
+  it("dil_denetimi_sonucu_duruma_yazilir", async () => {
+    const yok = kur({ ocr: async () => false });
+    expect(yok.y.durum().ocrHazir).toBeUndefined();
+    await yok.y.dilDenetle();
+    expect(yok.y.durum().ocrHazir).toBe(false);
+    const var_ = kur({ ocr: async () => true });
+    await var_.y.dilDenetle();
+    expect(var_.y.durum().ocrHazir).toBe(true);
+  });
+
+  it("dil_denetimi_anlasilamazsa_onceki_bilgi_kalir", async () => {
+    let sonuc: boolean | null = true;
+    const k = kur({ ocr: async () => sonuc });
+    await k.y.dilDenetle();
+    sonuc = null;
+    await k.y.dilDenetle();
+    expect(k.y.durum().ocrHazir).toBe(true);
+    const hatali = kur({ ocr: async () => { throw new Error("x"); } });
+    await hatali.y.dilDenetle();
+    expect(hatali.y.durum().ocrHazir).toBeUndefined();
+  });
+
+  it("calisirken_ocr_dil_yok_gelirse_durum_guncellenir", async () => {
+    const k = kur({ ocr: async () => true });
+    await k.y.yenile();
+    await k.y.dilDenetle();
+    k.y.calistir();
+    k.surec.olay({ olay: "hata", kod: "ocr_dil_yok" });
+    expect(k.y.durum().ocrHazir).toBe(false);
+    expect(k.y.durum().hata).toBe("ocr_dil_yok");
+  });
+
+  it("dil_denetimi_kapattiktan_sonra_yazmaz", async () => {
+    let coz: (v: boolean) => void = () => {};
+    const k = kur({ ocr: () => new Promise<boolean>((r) => (coz = r)) });
+    const p = k.y.dilDenetle();
+    k.y.kapat();
+    coz(false);
+    await p;
+    expect(k.y.durum().ocrHazir).toBeUndefined();
+  });
+
   it("ilk_durum_yukleniyor_ilk_yenileye_kadar", async () => {
     const k = kur();
     expect(k.y.durum().yukleniyor).toBe(true);

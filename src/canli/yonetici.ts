@@ -32,6 +32,8 @@ export interface YoneticiSecenekleri {
   zaman?: Zaman;
   /** Yalnız geliştirmede (TV_CANLI_TEST_OYUNU): paketli engeli atlanır, oyun kimliği bu olur. */
   testOyunu?: string;
+  /** İngilizce metin tanıma denetimi (true/false; null: anlaşılamadı). */
+  ocrDenetle?: () => Promise<boolean | null>;
 }
 
 const YOKLAMA_MS = 5000;
@@ -198,6 +200,20 @@ export class CanliYonetici {
   }
 
   /** Lisans durumunu sunucudan yeniler; süren bir yenileme varsa onun sözünü döndürür. */
+  /** İngilizce metin tanımayı denetler; sonuç anlaşılamazsa önceki bilgi korunur. */
+  async dilDenetle(): Promise<void> {
+    if (this.kapandi || !this.o.ocrDenetle) return;
+    let sonuc: boolean | null = null;
+    try {
+      sonuc = await this.o.ocrDenetle();
+    } catch {
+      sonuc = null;
+    }
+    if (this.kapandi || sonuc === null) return;
+    this.d.ocrHazir = sonuc;
+    this.yay();
+  }
+
   yenile(): Promise<void> {
     if (this.yenileniyor) return this.yenileniyor;
     const p = this.yenileIc().finally(() => {
@@ -508,6 +524,7 @@ export class CanliYonetici {
       case "hata":
         if (typeof o.kod !== "string") return;
         if (this.oturum) this.oturumHatasi = o.kod;
+        if (o.kod === "ocr_dil_yok") this.d.ocrHazir = false;
         this.d.hata = o.kod;
         this.yay();
         return;

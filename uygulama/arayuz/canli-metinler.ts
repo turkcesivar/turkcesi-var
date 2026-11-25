@@ -21,6 +21,7 @@ export const SINIRLAR = [
   "Türkçe, İngilizceden 1-2 saniye sonra gelir. Daha önce çevrilmiş satırlar anında görünür.",
   "Türkçe yazı oyunun yazı tipiyle değil, İngilizcenin üstüne konan bir kutuda görünür.",
   "Oyun pencereli tam ekranda olmalı ve altyazılar açık olmalı. İnternet bağlantısı gerekir.",
+  "Windows'ta İngilizce dil paketi yüklü olmalı (ekrandaki İngilizce yazıyı Windows okur). Yoksa uygulama sana nasıl kuracağını gösterir.",
   "Hile korumalı ve çevrimiçi oyunlarda çalışmaz.",
 ] as const;
 
@@ -55,8 +56,7 @@ const KODLAR: Record<string, string> = {
   butce: "Bugünlük genel çeviri kapasitesi doldu; daha önce çevrilmiş satırlar görünmeye devam eder.",
   hak_bitti: HAK_BITTI,
   gun_bitti: GUN_BITTI,
-  ocr_dil_yok:
-    "Windows'ta İngilizce metin tanıma yüklü değil. Ayarlar → Saat ve dil → Dil ve bölge → Tercih edilen diller: İngilizce (ABD) ekle (yalnız 'Temel yazma' yeterli), sonra uygulamayı yeniden başlat.",
+  ocr_dil_yok: "Windows'ta İngilizce dil paketi yüklü değil. Yukarıdaki adımlarla kurup \"Yeniden denetle\"ye bas.",
   cihaz_dustu: "Bu lisans başka iki bilgisayarda kullanıldığı için bu bilgisayarın bağlantısı düştü.",
   lisans_yok: "Lisans bulunamadı.",
   deneme_kullanildi: "Bu bilgisayarda deneme daha önce kullanılmış.",
@@ -76,3 +76,21 @@ export const hileEngel = (oyunAdi: string) => `${oyunAdi} hile korumalı olduğu
 export const DENEME_KARTI = "Deneme başladı: 7 gün, 2.000 yeni satır. Sorun, öneri ve yeni oyunlar için Discord'a katıl.";
 export const DENEME_DAVETI = "Sorun, öneri ve yeni oyunlar için Discord'a katıl.";
 export const ESLESTIRME_ACIKLAMA_SON = "Ödemen gelince canlı çeviri bu bilgisayarda kendiliğinden açılır.";
+
+// ---- İngilizce dil paketi (Windows metin tanıma) ----
+
+export const DIL_BASLIK = "İngilizce dil paketi gerekli";
+export const DIL_ACIKLAMA =
+  "Canlı çeviri, ekrandaki İngilizce yazıyı Windows'un kendi metin tanıma özelliğiyle okur. Bunun için Windows'ta İngilizce dil paketi yüklü olmalı ve bu bilgisayarda bulunamadı. Windows'un dili değişmez; yalnızca İngilizce yazıyı okuyabilmesi için gereken parça eklenir.";
+export const DIL_ADIMLAR = [
+  "Aşağıdaki \"Dil ayarlarını aç\" düğmesine bas (Ayarlar → Saat ve dil → Dil ve bölge açılır).",
+  "\"Tercih edilen diller\" satırındaki \"Dil ekle\" düğmesine bas.",
+  "Arama kutusuna English yaz, \"English (United States)\" seç ve \"İleri\"ye bas.",
+  "\"Windows görüntüleme dili olarak ayarla\" işaretliyse kaldır (Windows Türkçe kalsın). Diğer seçenekleri olduğu gibi bırakıp \"Yükle\"ye bas.",
+  "Yükleme bitince (birkaç dakika sürebilir) \"Yeniden denetle\"ye bas. Hâlâ bulunamazsa bilgisayarı yeniden başlatıp tekrar dene.",
+] as const;
+export const DIL_WIN10 = "Windows 10'da yol: Ayarlar → Saat ve dil → Dil → \"Tercih edilen dil ekle\".";
+export const DIL_GELISMIS =
+  "Olmazsa: Başlat menüsünde PowerShell'e sağ tıkla → \"Yönetici olarak çalıştır\", aşağıdaki komutu yapıştırıp Enter'a bas, bitince \"Yeniden denetle\"ye bas.";
+export const DIL_KOMUTU = 'Add-WindowsCapability -Online -Name "Language.OCR~~~en-US~0.0.1.0"';
+export const DIL_GEREKLI_IPUCU = "Önce İngilizce dil paketini kur (yukarıdaki adımlar).";

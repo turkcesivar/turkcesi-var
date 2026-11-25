@@ -58,14 +58,26 @@ export function surecAcikMiAsenkron(ad: string): Promise<boolean> {
   });
 }
 
-/** Açılışta yönetici: arayüze yayını bağlar ve lisans durumunu hemen sunucudan ister. */
-export function yoneticiyiAc<Y extends { dinle(f: (d: D) => void): unknown; yenile(): Promise<void> }, D>(y: Y, yay: (d: D) => void): Y {
+/**
+ * Açılışta yönetici: arayüze yayını bağlar, lisans durumunu hemen sunucudan ister ve
+ * Windows'ta İngilizce metin tanıma var mı diye bakar.
+ */
+export function yoneticiyiAc<
+  Y extends { dinle(f: (d: D) => void): unknown; yenile(): Promise<void>; dilDenetle?(): Promise<void> },
+  D,
+>(y: Y, yay: (d: D) => void): Y {
   y.dinle(yay);
   void y.yenile().catch(() => {
     // yenile kendi hatasını durumda gösterir
   });
+  void y.dilDenetle?.().catch(() => {
+    // denetim anlaşılamazsa uyarı gösterilmez
+  });
   return y;
 }
+
+/** Windows'ta dil ayarları sayfası (İngilizce dil paketi buradan eklenir). */
+export const DIL_AYARLARI_ADRESI = "ms-settings:regionlanguage";
 
 /**
  * Kurulumu bir kez yapan, ama reddedilirse sonraki çağrıda yeniden deneyen söz

@@ -1832,3 +1832,38 @@ h3 {
   color: var(--metin);
   background: var(--yuzey-2);
 }
+
+/* Canlı Çeviri: İngilizce dil paketi kartı */
+.canli-dil {
+  border-color: var(--uyari);
+  background: linear-gradient(0deg, var(--uyari-zemin), var(--uyari-zemin)), var(--yuzey);
+}
+.canli-dil .panel-baslik svg {
+  color: var(--uyari);
+}
+.canli-adimlar {
+  margin: 12px 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 6px;
+  line-height: 1.5;
+}
+.canli-gelismis {
+  margin-top: 10px;
+}
+.canli-gelismis summary {
+  cursor: pointer;
+  color: var(--metin-2);
+}
+.canli-komut {
+  display: block;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--zemin);
+  border: 1px solid var(--cizgi);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 13px;
+  user-select: all;
+  overflow-wrap: anywhere;
+}

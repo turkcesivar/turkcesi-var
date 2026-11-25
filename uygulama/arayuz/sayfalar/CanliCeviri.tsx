@@ -6,7 +6,8 @@ import { Simge } from "../bilesenler/Simge.js";
 import { Bildirim, Dugme, Iskelet, sayi } from "../bilesenler/temel.js";
 import { useYumusakKapat } from "../bilesenler/yumusak.js";
 import {
-  DENEME_DAVETI, DENEME_KARTI, ESLESTIRME_ACIKLAMA_SON, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
+  DENEME_DAVETI, DENEME_KARTI, DIL_ACIKLAMA, DIL_ADIMLAR, DIL_BASLIK, DIL_GELISMIS, DIL_GEREKLI_IPUCU, DIL_KOMUTU, DIL_WIN10,
+  ESLESTIRME_ACIKLAMA_SON, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
   SINIRLAR, SINIRLAR_BASLIK, SURE_BITTI, durumSatiri, hileEngel, kodMetni, paketliEngel,
 } from "../canli-metinler.js";
 import { DESTEK_ADRESI, DISCORD_ADRESI } from "../sabitler.js";
@@ -82,6 +83,46 @@ function OnayPenceresi({ onayla, vazgec }: { onayla: () => void; vazgec: () => v
         </div>
       </div>
     </div>
+  );
+}
+
+/** Windows'ta İngilizce metin tanıma yoksa: nasıl kurulacağı, ayarları açma ve yeniden denetleme. */
+function DilPaketiKarti() {
+  const [denetleniyor, setDenetleniyor] = useState(false);
+  const denetle = async () => {
+    setDenetleniyor(true);
+    try {
+      await window.tv.canliDilDenetle();
+    } finally {
+      setDenetleniyor(false);
+    }
+  };
+  return (
+    <section className="panel canli-dil" aria-label={DIL_BASLIK}>
+      <h2 className="panel-baslik">
+        <Simge ad="uyari" /> {DIL_BASLIK}
+      </h2>
+      <p>{DIL_ACIKLAMA}</p>
+      <ol className="canli-adimlar">
+        {DIL_ADIMLAR.map((a) => (
+          <li key={a}>{a}</li>
+        ))}
+      </ol>
+      <div className="eylemler">
+        <Dugme tur="ana" simge="ayarlar" onClick={() => void window.tv.canliDilAyarlari()}>
+          Dil ayarlarını aç
+        </Dugme>
+        <Dugme tur="ikincil" simge="yenile" donen={denetleniyor} pasif={denetleniyor} onClick={() => void denetle()}>
+          Yeniden denetle
+        </Dugme>
+      </div>
+      <p className="soluk">{DIL_WIN10}</p>
+      <details className="canli-gelismis">
+        <summary>Dil ekleyince de olmadıysa</summary>
+        <p className="soluk">{DIL_GELISMIS}</p>
+        <code className="canli-komut">{DIL_KOMUTU}</code>
+      </details>
+    </section>
   );
 }
 
@@ -189,9 +230,17 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
     const kod = hata ?? d.sunucuHatasi;
     // Süresi biten deneme yeniden denenemez (sunucu 409 döner).
     const denemeOlur = !(l.durum === "suresi_bitti" && l.tur === "deneme");
+    const dilYok = d.ocrHazir === false;
     const denemeDugmesi = (tur: "ana" | "ikincil") =>
       denemeOlur && (
-        <Dugme tur={tur} buyuk simge="canli" pasif={isleniyor} onClick={() => setOnay(true)}>
+        <Dugme
+          tur={tur}
+          buyuk
+          simge="canli"
+          pasif={isleniyor || dilYok}
+          title={dilYok ? DIL_GEREKLI_IPUCU : undefined}
+          onClick={() => setOnay(true)}
+        >
           7 gün ücretsiz dene
         </Dugme>
       );
@@ -206,6 +255,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             }}
           />
         )}
+        {dilYok && <DilPaketiKarti />}
         {l.durum === "suresi_bitti" && <Bildirim tur="bilgi">{SURE_BITTI}</Bildirim>}
         {l.durum === "suresi_bitti" && l.tur === "deneme" && (
           <div className="canli-davet">
@@ -215,7 +265,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             </Dugme>
           </div>
         )}
-        {kod && (
+        {kod && !(kod === "ocr_dil_yok" && dilYok) && (
           <Bildirim tur="tehlike">
             <p>{kodMetni(kod)}</p>
             {kod === "kayit" && (
@@ -277,9 +327,12 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
     const hakBlogu = l.durum === "hak_bitti";
     const gunBlogu = !hakBlogu && gunBitti;
     // Aynı uyarı aşağıdaki özel blokta gösteriliyorsa sorun bandında tekrarlanmaz.
-    const sorunGoster = !!sorun && !((sorun === "hak_bitti" && hakBlogu) || (sorun === "gun_bitti" && gunBlogu));
+    const dilYok = d.ocrHazir === false;
+    const sorunGoster =
+      !!sorun && !((sorun === "hak_bitti" && hakBlogu) || (sorun === "gun_bitti" && gunBlogu) || (sorun === "ocr_dil_yok" && dilYok));
     govde = (
       <>
+        {dilYok && <DilPaketiKarti />}
         {tur === "deneme" && !denemeKartiKapali && (
           <div className="canli-davet" role="status">
             <span>{DENEME_KARTI}</span>
@@ -305,7 +358,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
                 ■ Durdur
               </Dugme>
             ) : (
-              <Dugme tur="ana" buyuk onClick={() => void window.tv.canliBaslat()}>
+              <Dugme tur="ana" buyuk pasif={dilYok} title={dilYok ? DIL_GEREKLI_IPUCU : undefined} onClick={() => void window.tv.canliBaslat()}>
                 ▶ Canlı Çeviriyi Başlat
               </Dugme>
             )}

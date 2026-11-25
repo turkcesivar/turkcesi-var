@@ -34,4 +34,6 @@ export interface CanliDurum {
   uyari?: string;
   hata?: string;
   engel?: { tur: "paketli" | "hile"; oyunAdi: string; kimlik?: string };
+  /** Windows'ta İngilizce metin tanıma: true yüklü, false yüklü değil, yoksa henüz bilinmiyor. */
+  ocrHazir?: boolean;
 }

@@ -18,6 +18,8 @@ function kur(d: CanliDurum, ek: Record<string, unknown> = {}) {
     canliEslestir: vi.fn(() => Promise.resolve({})),
     canliBaslat: vi.fn(() => Promise.resolve()),
     canliDurdur: vi.fn(() => Promise.resolve()),
+    canliDilDenetle: vi.fn(() => Promise.resolve()),
+    canliDilAyarlari: vi.fn(() => Promise.resolve()),
     disBaglanti: vi.fn(() => Promise.resolve()),
     ...ek,
   };
@@ -26,6 +28,42 @@ function kur(d: CanliDurum, ek: Record<string, unknown> = {}) {
 }
 
 describe("Canlı Çeviri sayfası", () => {
+  it("dil_paketi_yoksa_kart_adimlar_ve_deneme_kapali", async () => {
+    const tv = kur({ ...taban, ocrHazir: false });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByText("İngilizce dil paketi gerekli")).toBeTruthy();
+    expect(screen.getByText(/English \(United States\)/)).toBeTruthy();
+    expect(screen.getByText(/Windows görüntüleme dili olarak ayarla/)).toBeTruthy();
+    const deneme = screen.getByRole("button", { name: /7 gün ücretsiz dene/ }) as HTMLButtonElement;
+    expect(deneme.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /Dil ayarlarını aç/ }));
+    expect(tv.canliDilAyarlari).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /Yeniden denetle/ }));
+    await waitFor(() => expect(tv.canliDilDenetle).toHaveBeenCalledTimes(1));
+  });
+
+  it("dil_paketi_varsa_ya_da_bilinmiyorsa_kart_yok", async () => {
+    kur({ ...taban, ocrHazir: true });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    await screen.findByText(/Her şey çevrilmez/);
+    expect(screen.queryByText("İngilizce dil paketi gerekli")).toBeNull();
+    cleanup();
+    kur(taban);
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    const deneme = (await screen.findByRole("button", { name: /7 gün ücretsiz dene/ })) as HTMLButtonElement;
+    expect(deneme.disabled).toBe(false);
+    expect(screen.queryByText("İngilizce dil paketi gerekli")).toBeNull();
+  });
+
+  it("lisansliyken_dil_paketi_yoksa_baslat_kapali_ve_hata_tekrarlanmaz", async () => {
+    kur({ yukleniyor: false, lisans: { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 100 }, calisma: "kapali", ocrHazir: false, hata: "ocr_dil_yok" });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByText("İngilizce dil paketi gerekli")).toBeTruthy();
+    const baslat = screen.getByRole("button", { name: /Canlı Çeviriyi Başlat/ }) as HTMLButtonElement;
+    expect(baslat.disabled).toBe(true);
+    expect(screen.queryByText(kodMetni("ocr_dil_yok"))).toBeNull();
+  });
+
   it("lisanssiz_ekran_farki_anlatir", async () => {
     kur(taban);
     render(<CanliCeviri onOyunaGit={vi.fn()} />);

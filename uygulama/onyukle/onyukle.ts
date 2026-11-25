@@ -52,6 +52,8 @@ const tv: TvApi = {
   canliEslestir: () => ipcRenderer.invoke("tv:canliEslestir"),
   canliBaslat: () => ipcRenderer.invoke("tv:canliBaslat"),
   canliDurdur: () => ipcRenderer.invoke("tv:canliDurdur"),
+  canliDilDenetle: () => ipcRenderer.invoke("tv:canliDilDenetle"),
+  canliDilAyarlari: () => ipcRenderer.invoke("tv:canliDilAyarlari"),
 };
 
 contextBridge.exposeInMainWorld("tv", tv);

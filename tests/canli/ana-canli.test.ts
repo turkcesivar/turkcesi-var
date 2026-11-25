@@ -85,6 +85,12 @@ describe("yoneticiyiAc", () => {
     expect(y.dinle).toHaveBeenCalledWith(yay);
     expect(y.yenile).toHaveBeenCalledTimes(1);
   });
+
+  it("açılışta İngilizce metin tanımayı da denetler", () => {
+    const y = { dinle: vi.fn(), yenile: vi.fn(() => Promise.resolve()), dilDenetle: vi.fn(() => Promise.resolve()) };
+    yoneticiyiAc(y, vi.fn());
+    expect(y.dilDenetle).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("yenidenDenenirSoz", () => {
