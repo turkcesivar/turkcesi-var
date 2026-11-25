@@ -28,6 +28,23 @@ function kur(d: CanliDurum, ek: Record<string, unknown> = {}) {
 }
 
 describe("Canlı Çeviri sayfası", () => {
+  it("yenile_dugmesi_lisansi_ve_dil_paketini_yeniden_denetler", async () => {
+    const tv = kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 50 } });
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    const dugme = await screen.findByRole("button", { name: /Yenile/ });
+    tv.canliDurum.mockClear();
+    fireEvent.click(dugme);
+    await waitFor(() => expect(tv.canliYenile).toHaveBeenCalledTimes(1));
+    expect(tv.canliDilDenetle).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(tv.canliDurum).toHaveBeenCalled());
+  });
+
+  it("yenile_dugmesi_lisans_ekraninda_da_var", async () => {
+    kur(taban);
+    render(<CanliCeviri onOyunaGit={vi.fn()} />);
+    expect(await screen.findByRole("button", { name: /Yenile/ })).toBeTruthy();
+  });
+
   it("dil_paketi_yoksa_kart_adimlar_ve_deneme_kapali", async () => {
     const tv = kur({ ...taban, ocrHazir: false });
     render(<CanliCeviri onOyunaGit={vi.fn()} />);

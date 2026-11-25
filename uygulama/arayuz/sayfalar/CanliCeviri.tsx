@@ -184,6 +184,21 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
     void window.tv.canliYenile().then(yukle, yukle);
   };
 
+  /** Başlıktaki Yenile: lisans durumu sunucudan ve İngilizce dil paketi yeniden denetlenir (ekran silinmez). */
+  const [yenileniyor, setYenileniyor] = useState(false);
+  const hepsiniYenile = async () => {
+    setYenileniyor(true);
+    setHata(undefined);
+    try {
+      await Promise.all([window.tv.canliYenile(), window.tv.canliDilDenetle()]);
+    } catch {
+      // hata durumu yukle() ile gösterilir
+    } finally {
+      await yukle();
+      if (canli.current) setYenileniyor(false);
+    }
+  };
+
   /** Deneme / eşleştirme: hata kodu varsa gösterir, yoksa durumu yeniler. */
   const islem = async (f: () => Promise<{ hata?: string }>) => {
     setIsleniyor(true);
@@ -420,6 +435,18 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
         <div>
           <h1>Canlı Çeviri</h1>
           <p className="soluk">Türkçesi olmayan oyunlarda ekrandaki yazıyı anında Türkçeye çevirir.</p>
+        </div>
+        <div className="arac-cubugu">
+          <Dugme
+            tur="ikincil"
+            simge="yenile"
+            donen={yenileniyor}
+            pasif={yenileniyor}
+            onClick={() => void hepsiniYenile()}
+            title="Lisans durumunu ve İngilizce dil paketini yeniden denetle"
+          >
+            Yenile
+          </Dugme>
         </div>
       </header>
       <div className="canli-icerik">{govde}</div>
