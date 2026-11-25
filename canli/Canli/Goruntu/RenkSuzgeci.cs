@@ -34,12 +34,13 @@ namespace Canli.Goruntu
             return TemizleRenkler(kaynak, new[] { hedef }, out imza, out tamamenSiyah);
         }
 
-        /// <summary>Bir rengin eşleşen piksellerinin en az bu kadarı çizgi kenarında olmalı (yazı ince; kar/gökyüzü geniş leke).</summary>
-        public const double EnAzKenarOrani = 0.3;
+        /// <summary>Yazı çizgisinin en büyük kalınlığı: en az 8 px, bölge yüksekliğinin %5'i.</summary>
+        public static int CizgiKalinligi(int bolgeYuksekligi) => Math.Max(8, (int)Math.Round(bolgeYuksekligi * 0.05));
 
         /// <summary>
-        /// Öğrenilen renklerden herhangi birine yakın pikseller yazı sayılır. Her renk karede ayrı denetlenir:
-        /// eşleşen pikselleri geniş lekeler oluşturuyorsa (ör. öğrenilmiş açık gri = karlı zemin) o renk bu karede atlanır.
+        /// Öğrenilen renklerden herhangi birine yakın pikseller yazı sayılır; ama yalnız ince çizgi üstündekiler:
+        /// pikselin yatay ve dikey eşleşme dizilerinden kısası çizgi kalınlığını aşıyorsa (kar, gökyüzü gibi geniş leke)
+        /// atılır. Böylece aynı karede açık gri konuşmacı adı tutulur, aynı renkteki kar atılır.
         /// </summary>
         public static Bitmap TemizleRenkler(Bitmap kaynak, System.Collections.Generic.IReadOnlyList<Color> hedefler, out long imza, out bool tamamenSiyah)
         {
@@ -62,21 +63,27 @@ namespace Canli.Goruntu
                     { renkNo[i] = (sbyte)k; break; }
                 }
             }
-            var sayi = new int[hedefler.Count];
-            var kenar = new int[hedefler.Count];
+            // Eşleşen piksellerin yatay ve dikey dizi uzunlukları.
+            var yatay = new int[n];
+            var dikey = new int[n];
             for (int y = 0; y < hgt; y++)
-                for (int x = 0; x < w; x++)
+                for (int x = 0; x < w;)
                 {
-                    int i = y * w + x, k = renkNo[i];
-                    if (k < 0) continue;
-                    sayi[k]++;
-                    bool icte = x > 0 && x < w - 1 && y > 0 && y < hgt - 1
-                        && renkNo[i - 1] == k && renkNo[i + 1] == k && renkNo[i - w] == k && renkNo[i + w] == k;
-                    if (!icte) kenar[k]++;
+                    if (renkNo[y * w + x] < 0) { x++; continue; }
+                    int bas = x;
+                    while (x < w && renkNo[y * w + x] >= 0) x++;
+                    for (int j = bas; j < x; j++) yatay[y * w + j] = x - bas;
                 }
-            var gecerli = new bool[hedefler.Count];
-            for (int k = 0; k < hedefler.Count; k++) gecerli[k] = sayi[k] > 0 && (double)kenar[k] / sayi[k] >= EnAzKenarOrani;
-            return Uygula(kaynak, px, i => renkNo[i] >= 0 && gecerli[renkNo[i]], out imza, out tamamenSiyah);
+            for (int x = 0; x < w; x++)
+                for (int y = 0; y < hgt;)
+                {
+                    if (renkNo[y * w + x] < 0) { y++; continue; }
+                    int bas = y;
+                    while (y < hgt && renkNo[y * w + x] >= 0) y++;
+                    for (int j = bas; j < y; j++) dikey[j * w + x] = y - bas;
+                }
+            int kalinlik = CizgiKalinligi(hgt);
+            return Uygula(kaynak, px, i => renkNo[i] >= 0 && Math.Min(yatay[i], dikey[i]) <= kalinlik, out imza, out tamamenSiyah);
         }
 
         private static Bitmap Uygula(Bitmap kaynak, Func<int, int, int, bool> yaziMi, out long imza, out bool tamamenSiyah)

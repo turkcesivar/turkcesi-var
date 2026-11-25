@@ -258,6 +258,23 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public async Task bozuk_okuma_sunucuya_gitmez_temiz_okuma_gider()
+        {
+            var s = new Sahneler("{\"tr\":\"Kıpırda.\",\"kaynak\":\"model\"}");
+            var tani = new SahteTani();
+            var c = s.Calistirici(new OnPlanBekcisi(""), tani: tani);
+            await c.Basla();
+            s.Ekran.Satirlar = new[] { "D$s�yg*��l FLAT" };
+            c.YakalamaTik();
+            await Task.Delay(100);
+            Assert.Equal(0, s.CeviriIstegi);
+            Assert.Contains(tani.Satirlar(), l => l.Contains("\"bozuk_okuma\""));
+            s.Ekran.Satirlar = new[] { "Move it, we don't need any extra radiation, darling." };
+            c.YakalamaTik();
+            Assert.True(SpinWait.SpinUntil(() => s.CeviriIstegi == 1, 5000));
+        }
+
+        [Fact]
         public async Task onbellek_isabeti_sunucuya_gitmez()
         {
             var s = new Sahneler("{\"tr\":\"x\"}",

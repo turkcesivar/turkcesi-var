@@ -36,8 +36,10 @@ Komut satırından deneme: `canli.exe --lisans K --oyun ID --oyunAdi AD [--renk 
 Profilde renk verilmemişse (`ikisi`) altyazı rengi oturumda öğrenilir: 2 sn'de bir altyazı bölgesi süzgeçsiz okunur,
 yazı kutularında zemin (kutu kenarı) renginden uzak, ince çizgilerde yoğunlaşan, baskın ve koyu olmayan renk yazı
 rengi sayılır (gölge/çerçeve elenir). Aynı renk 3 kez gelince öğrenilir; en çok 5 renk (ör. beyaz ipucu + konuşmacıya göre değişen renkler). Öğrenilen renkler oyun başına `%LOCALAPPDATA%\TurkcesiVar\canli\bellek\renk-*.txt` dosyasına yazılır ve
-sonraki açılışta hemen kullanılır. Her karede her renk ayrı denetlenir: eşleşen pikselleri geniş leke
-oluşturan renk (ör. öğrenilmiş açık gri = karlı zemin) o karede atlanır. Öğrenene kadar sabit süzgeç (beyaz, sarı, turuncu) çalışır. Profil `beyaz`,
+sonraki açılışta hemen kullanılır. Yalnız ince çizgi üstündeki pikseller tutulur: yatay ve dikey eşleşme
+dizilerinden kısası yazı kalınlığını aşan piksel (kar, gökyüzü gibi geniş leke) atılır; böylece aynı karede açık gri
+konuşmacı adı tutulur, aynı renkteki kar atılır. Bozuk okumalar (� işareti, tuhaf simgeler, harf-rakam karışık
+kelimeler, düşük harf oranı) sunucuya gönderilmez (tanı olayı `bozuk_okuma`). Öğrenene kadar sabit süzgeç (beyaz, sarı, turuncu) çalışır. Profil `beyaz`,
 `sari` ya da `turuncu` derse yalnız o renk kullanılır. Tanı olayı: `renk` (`kaynak` = disk/algilandi, `renkler`).
 
 ## Önceden indirilen bellek

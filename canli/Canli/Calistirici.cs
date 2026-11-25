@@ -328,6 +328,13 @@ namespace Canli
             }
             double ocrMs = _saat() - t0;
             string metin = Regex.Replace(string.Join(" ", satirlar.Select(s => s.Metin)), @"\s+", " ").Trim();
+            // Altyazı belirirken/kaybolurken gelen bozuk okuma gönderilmez; durum değişmez, sonraki temiz okuma beklenir.
+            if (metin.Length > 0 && !MetinKalitesi.Yeterli(metin))
+            {
+                _tani.Yaz("bozuk_okuma", ("en", metin), ("ocrMs", Ms(ocrMs)));
+                _sonImza = 0;
+                return;
+            }
             var karar = _durum.Okundu(metin, Birlesim(satirlar));
             if (karar.Tur != KararTuru.YeniSatir) return;
 

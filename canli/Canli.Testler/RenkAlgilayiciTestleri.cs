@@ -189,6 +189,33 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public void ayni_karede_gri_ad_tutulur_gri_kar_atilir()
+        {
+            // Metro: konuşmacı adı açık gri, konuşma turuncu; aynı karede açık gri kar lekesi var.
+            var gri = Color.FromArgb(199, 199, 199);
+            var turuncu = Color.FromArgb(255, 151, 0);
+            using (var b = new Bitmap(1100, 90))
+            {
+                using (var g = Graphics.FromImage(b))
+                using (var f = new Font("Arial", 30, FontStyle.Bold, GraphicsUnit.Pixel))
+                {
+                    g.Clear(Color.FromArgb(60, 60, 70));
+                    using (var br = new SolidBrush(Color.FromArgb(205, 203, 200))) g.FillRectangle(br, 500, 0, 400, 90);  // kar lekesi
+                    g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                    using (var gb = new SolidBrush(gri)) g.DrawString("ANNA:", f, gb, 20, 25);
+                    using (var tb = new SolidBrush(turuncu)) g.DrawString("Don't you think so?", f, tb, 140, 25);
+                }
+                using (var t = RenkSuzgeci.TemizleRenkler(b, new[] { gri, turuncu }, out _, out _))
+                {
+                    long Say(int x0, int x1, int y0, int y1) { long n = 0; for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) if (t.GetPixel(x, y).R == 0) n++; return n; }
+                    Assert.True(Say(20, 130, 20, 70) > 150, "ad");          // gri ad tutuldu
+                    Assert.True(Say(140, 480, 20, 70) > 300, "konuşma");    // turuncu konuşma tutuldu
+                    Assert.True(Say(520, 880, 5, 85) < 40, "kar");          // kar lekesinin içi atıldı
+                }
+            }
+        }
+
+        [Fact]
         public void oylama_ayni_renk_uc_kez_gelince_karar_verir()
         {
             var o = new RenkOylamasi();
