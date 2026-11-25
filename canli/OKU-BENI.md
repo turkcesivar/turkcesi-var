@@ -31,6 +31,15 @@ Profil bölgeleri ekranın içinde ve boyutu sıfırdan büyük olmalıdır; ge�
 
 Komut satırından deneme: `canli.exe --lisans K --oyun ID --oyunAdi AD [--renk sari] [--bolge x,y,g,y2] [--ek x,y,g,y2] [--surec Oyun.exe] [--tani]`
 
+## Altyazı rengi
+
+Profilde renk verilmemişse (`ikisi`) altyazı rengi oturumda öğrenilir: 2 sn'de bir altyazı bölgesi süzgeçsiz okunur,
+yazı kutularında zemin (kutu kenarı) renginden uzak, ince çizgilerde yoğunlaşan, baskın ve koyu olmayan renk yazı
+rengi sayılır (gölge/çerçeve elenir). Aynı renk 3 kez gelince öğrenilir; en çok 3 renk (ör. beyaz ipucu + turuncu
+konuşma). Öğrenilen renkler oyun başına `%LOCALAPPDATA%\TurkcesiVar\canli\bellek\renk-*.txt` dosyasına yazılır ve
+sonraki açılışta hemen kullanılır. Öğrenene kadar sabit süzgeç (beyaz, sarı, turuncu) çalışır. Profil `beyaz`,
+`sari` ya da `turuncu` derse yalnız o renk kullanılır. Tanı olayı: `renk` (`kaynak` = disk/algilandi, `renkler`).
+
 ## Önceden indirilen bellek
 
 `basladi`dan sonra oyunun ortak belleği arka planda iner (`GET /bellek/<oyun>`, lisanslı): önce disk önbelleği

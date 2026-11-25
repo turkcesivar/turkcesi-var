@@ -98,6 +98,15 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public void turuncu_renk_kabul_edilir()
+        {
+            Assert.True(Protokol.KomutCoz("{\"komut\":\"basla\",\"lisans\":\"K\",\"oyun\":\"o\",\"sureciAdi\":\"a.exe\",\"profil\":{\"renk\":\"turuncu\"}}", out Komut k, out _));
+            Assert.Equal("turuncu", k.Profil.Renk);
+            Assert.Equal("turuncu", Calistirici.ProfilSec(k, null).Renk);
+            Assert.Equal("turuncu", Protokol.KomutSatirindan(new[] { "--lisans", "K", "--oyun", "o", "--renk", "turuncu" }).Profil.Renk);
+        }
+
+        [Fact]
         public void cihaz_ozeti_sabit()
         {
             string beklenen;

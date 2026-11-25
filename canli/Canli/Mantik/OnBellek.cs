@@ -200,6 +200,41 @@ namespace Canli.Mantik
             }
         }
 
+        private string RenkYolu(string oyun) => Path.Combine(_klasor, "renk-" + Path.GetFileName(Yol(oyun)).Replace(".json", ".txt"));
+
+        /// <summary>Bu oyun için öğrenilmiş altyazı renkleri (satır başına "oyun" sonra "r,g,b"); yoksa/bozuksa boş.</summary>
+        public List<System.Drawing.Color> RenkOku(string oyun)
+        {
+            var liste = new List<System.Drawing.Color>();
+            try
+            {
+                string yol = RenkYolu(oyun);
+                if (!File.Exists(yol)) return liste;
+                var satirlar = File.ReadAllLines(yol, Encoding.UTF8);
+                if (satirlar.Length < 1 || satirlar[0] != oyun) return liste;
+                foreach (var s in satirlar.Skip(1))
+                {
+                    var p = s.Split(',');
+                    if (p.Length != 3) return new List<System.Drawing.Color>();
+                    liste.Add(System.Drawing.Color.FromArgb(int.Parse(p[0]), int.Parse(p[1]), int.Parse(p[2])));
+                }
+            }
+            catch (Exception) { liste.Clear(); }
+            return liste;
+        }
+
+        public void RenkYaz(string oyun, IEnumerable<System.Drawing.Color> renkler)
+        {
+            try
+            {
+                Directory.CreateDirectory(_klasor);
+                var satirlar = new List<string> { oyun };
+                satirlar.AddRange(renkler.Select(c => c.R + "," + c.G + "," + c.B));
+                File.WriteAllLines(RenkYolu(oyun), satirlar, new UTF8Encoding(false));
+            }
+            catch (Exception) { }
+        }
+
         /// <summary>Kayıt yoksa, bozuksa ya da başka oyuna aitse null.</summary>
         public (string surum, List<(string en, string tr, bool menu)> satirlar)? Oku(string oyun)
         {

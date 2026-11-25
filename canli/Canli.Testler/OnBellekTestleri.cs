@@ -109,6 +109,25 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public void ogrenilen_renkler_oyun_basina_saklanir()
+        {
+            string klasor = Path.Combine(Path.GetTempPath(), "canli-renk-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var d = new OnBellekDiski(klasor);
+                Assert.Empty(d.RenkOku("steam:1"));
+                d.RenkYaz("steam:1", new[] { System.Drawing.Color.FromArgb(202, 66, 0), System.Drawing.Color.White });
+                var r = d.RenkOku("steam:1");
+                Assert.Equal(2, r.Count);
+                Assert.Equal(202, r[0].R); Assert.Equal(66, r[0].G); Assert.Equal(0, r[0].B);
+                Assert.Empty(d.RenkOku("steam:2"));
+                foreach (var f in Directory.GetFiles(klasor, "renk-*")) File.WriteAllText(f, "bozuk");
+                Assert.Empty(d.RenkOku("steam:1"));
+            }
+            finally { try { Directory.Delete(klasor, true); } catch (Exception) { } }
+        }
+
+        [Fact]
         public void disk_onbellegi_yaz_oku_ve_bozuk_yok_sayilir()
         {
             string klasor = Path.Combine(Path.GetTempPath(), "canli-ob-" + Guid.NewGuid().ToString("N"));

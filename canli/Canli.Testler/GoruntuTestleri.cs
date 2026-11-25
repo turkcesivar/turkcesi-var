@@ -51,6 +51,11 @@ namespace Canli.Testler
         }
         private static Bitmap BosOrnek() => KumZemin(1000, 90);
 
+        // Metro Exodus: koyu turuncu altyazı (ölçülen ≈ 202,66,0) karlı/gri zemin üstünde.
+        private static Bitmap KarZemin(int w, int h) =>
+            Gurultulu(w, h, r => { int v = r.Next(90, 236); return Color.FromArgb(v, v - r.Next(0, 12), v - r.Next(0, 20)); }, false);
+        private static Bitmap TuruncuOrnek() { var b = KarZemin(1000, 90); YaziCiz(b, Color.FromArgb(202, 66, 0), Yazi); return b; }
+
         private static double SiyahOran(Bitmap b)
         {
             long n = 0;
@@ -81,6 +86,41 @@ namespace Canli.Testler
             using (var k = BeyazOrnek())
             using (var t = RenkSuzgeci.Temizle(k, RenkKipi.Beyaz, 185, out _, out _))
                 Assert.InRange(SiyahOran(t), 0.005, 0.15);
+        }
+
+        [Fact]
+        public void turuncu_yazi_turuncu_kipte_tutulur_sari_kipte_atilir()
+        {
+            // Not: varsayılan sabit süzgeç (Ikisi) karlı zeminde beyazı da tuttuğu için gürültülüdür; bu yüzden
+            // profilsiz oyunda renk otomatik öğrenilir (RenkAlgilayiciTestleri). Ikisi yalnız öğrenene kadar geçiştir.
+            using (var k = TuruncuOrnek())
+            {
+                using (var t = RenkSuzgeci.Temizle(k, RenkKipi.Turuncu, 185, out _, out _))
+                    Assert.InRange(SiyahOran(t), 0.005, 0.15);
+                using (var t = RenkSuzgeci.Temizle(k, RenkKipi.Sari, 185, out _, out _))
+                    Assert.True(SiyahOran(t) < 0.002);
+            }
+            // Karlı/gri zemin turuncu kipte yazı sayılmaz; sarı yazı da turuncu değildir.
+            using (var bos = KarZemin(1000, 90))
+            using (var t = RenkSuzgeci.Temizle(bos, RenkKipi.Turuncu, 185, out _, out _))
+                Assert.True(SiyahOran(t) < 0.002);
+            using (var k = SariOrnek())
+            using (var t = RenkSuzgeci.Temizle(k, RenkKipi.Turuncu, 185, out _, out _))
+                Assert.True(SiyahOran(t) < 0.005);
+        }
+
+        [Fact]
+        public void ocr_turuncu_satiri_turuncu_kipte_okur()
+        {
+            var ocr = Okuyucu.Olustur(out _);
+            if (ocr == null) { _cikti.WriteLine("en-US OCR yok, atlandi."); return; }
+            using (var k = TuruncuOrnek())
+            using (var t = RenkSuzgeci.Temizle(k, RenkKipi.Turuncu, 185, out _, out _))
+            {
+                string hepsi = string.Join(" ", ocr.Oku(t).Select(s => s.Metin)).ToUpperInvariant();
+                _cikti.WriteLine(hepsi);
+                Assert.True(hepsi.Contains("TORRISI") || hepsi.Contains("MAFIOSO"), hepsi);
+            }
         }
 
         [Fact]

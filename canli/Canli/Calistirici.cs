@@ -44,6 +44,8 @@ namespace Canli
         private readonly ITaniKaydi _tani;
         private readonly OnBellek _onBellek = new OnBellek();
         private readonly OnBellekDiski _disk;
+        /// <summary>Profilde renk belirtilmemişse (ikisi) altyazı rengi oturumda öğrenilir; null: profilin rengi kullanılır.</summary>
+        private OtomatikRenk _otoRenk;
 
         private readonly AltyaziDurumu _durum;
         private readonly MenuAlgilayici _menu;
@@ -123,7 +125,14 @@ namespace Canli
                 return;
             }
             _profil = ProfilSec(_komut, bilgi.Profil);
-            _kip = _profil.Renk == "beyaz" ? RenkKipi.Beyaz : _profil.Renk == "sari" ? RenkKipi.Sari : RenkKipi.Ikisi;
+            _kip = _profil.Renk == "beyaz" ? RenkKipi.Beyaz : _profil.Renk == "sari" ? RenkKipi.Sari
+                : _profil.Renk == "turuncu" ? RenkKipi.Turuncu : RenkKipi.Ikisi;
+            if (_kip == RenkKipi.Ikisi)
+            {
+                var bilinen = _disk?.RenkOku(_komut.Oyun) ?? new List<Color>();
+                _otoRenk = new OtomatikRenk(_saat, bilinen);
+                if (bilinen.Count > 0) _tani.Yaz("renk", ("kaynak", "disk"), ("renkler", RenkMetni(bilinen)));
+            }
             _tani.Yaz("basladi", ("oyun", _komut.Oyun), ("renk", _profil.Renk), ("ekBolge", _profil.EkBolgeler?.Length ?? 0),
                       ("lisans", lisans.Durum), ("kalan", lisans.Kalan));
             _cikis.Yaz(Protokol.Olay("basladi"));
@@ -224,7 +233,7 @@ namespace Canli
             return new Profil
             {
                 AltyaziBolgesi = Profil.BolgeGecerli(kaynak.AltyaziBolgesi) ? kaynak.AltyaziBolgesi : v.AltyaziBolgesi,
-                Renk = kaynak.Renk == "beyaz" || kaynak.Renk == "sari" || kaynak.Renk == "ikisi" ? kaynak.Renk : v.Renk,
+                Renk = Profil.RenkGecerli(kaynak.Renk) ? kaynak.Renk : v.Renk,
                 EkBolgeler = kaynak.EkBolgeler != null ? kaynak.EkBolgeler.Where(Profil.BolgeGecerli).ToArray() : v.EkBolgeler
             };
         }
@@ -304,12 +313,18 @@ namespace Canli
             IReadOnlyList<OcrSatiri> satirlar;
             double t0 = _saat();
             using (var ham = _ekranOkuyucu.Al(_bolge))
-            using (var temiz = RenkSuzgeci.Temizle(ham, _kip, RenkEsigi, out long imza, out bool siyah))
+            {
+                RengiOgren(ham);
+                var renkler = _otoRenk?.Renkler;
+                using (var temiz = renkler != null && renkler.Count > 0
+                    ? RenkSuzgeci.TemizleRenkler(ham, renkler, out long imza, out bool siyah)
+                    : RenkSuzgeci.Temizle(ham, _kip, RenkEsigi, out imza, out siyah))
             {
                 if (_siyah.Ekle(siyah)) Uyari("siyah_ekran");
                 if (imza == _sonImza) return;   // görüntü değişmedi
                 _sonImza = imza;
                 satirlar = _ekranOkuyucu.Oku(temiz);
+            }
             }
             double ocrMs = _saat() - t0;
             string metin = Regex.Replace(string.Join(" ", satirlar.Select(s => s.Metin)), @"\s+", " ").Trim();
@@ -336,6 +351,21 @@ namespace Canli
         }
 
         // decimal: JSON'da 12.3 olarak yazılır (double net48'de 12.299999999999999 olabilir).
+        /// <summary>2 sn'de bir süzgeçsiz okuma: yazı kutularından altyazı rengi öğrenilir (oyun başına diske yazılır).</summary>
+        private void RengiOgren(Bitmap ham)
+        {
+            if (_otoRenk == null || !_otoRenk.OrneklemeZamani()) return;
+            var hamSatirlar = _ekranOkuyucu.Oku(ham);
+            var kutular = hamSatirlar.Where(s => s.Metin.Count(char.IsLetter) >= 3).Select(s => s.Kutu).ToList();
+            if (kutular.Count == 0) { _otoRenk.Ornekle(ham, kutular); return; }
+            if (!_otoRenk.Ornekle(ham, kutular)) return;
+            _disk?.RenkYaz(_komut.Oyun, _otoRenk.Renkler);
+            _tani.Yaz("renk", ("kaynak", "algilandi"), ("renkler", RenkMetni(_otoRenk.Renkler)));
+            _sonImza = 0;   // yeni süzgeçle hemen yeniden oku
+        }
+
+        private static string RenkMetni(IEnumerable<Color> renkler) => string.Join(" ", renkler.Select(c => c.R + "," + c.G + "," + c.B));
+
         private static decimal Ms(double ms) { return (decimal)Math.Round(ms, 1); }
 
         private async Task CevirAsync(string en, double t0, double ocrMs)

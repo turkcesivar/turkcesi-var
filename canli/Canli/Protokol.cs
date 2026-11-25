@@ -28,6 +28,12 @@ namespace Canli
             }
         }
 
+        /// <summary>Bilinen renk adları: beyaz, sari, turuncu, ikisi (hepsi).</summary>
+        public static bool RenkGecerli(string renk)
+        {
+            return renk == "beyaz" || renk == "sari" || renk == "turuncu" || renk == "ikisi";
+        }
+
         /// <summary>Bölge [x, y, g, y2] ekranın içinde ve boyutu sıfırdan büyük mü.</summary>
         public static bool BolgeGecerli(double[] b)
         {
@@ -207,7 +213,7 @@ namespace Canli
             if (p.TryGetProperty("altyaziBolgesi", out JsonElement b) && b.ValueKind == JsonValueKind.Array)
                 profil.AltyaziBolgesi = Dizi(b);
             string renk = Metin(p, "renk");
-            if (renk == "beyaz" || renk == "sari" || renk == "ikisi") profil.Renk = renk;
+            if (Profil.RenkGecerli(renk)) profil.Renk = renk;
             if (p.TryGetProperty("ekBolgeler", out JsonElement e) && e.ValueKind == JsonValueKind.Array)
             {
                 var liste = new List<double[]>();
