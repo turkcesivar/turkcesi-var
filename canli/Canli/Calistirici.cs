@@ -327,6 +327,7 @@ namespace Canli
             }
             }
             double ocrMs = _saat() - t0;
+            satirlar = AltyaziDurumu.Sirala(satirlar);   // iki satırlık altyazı OCR'da karışık sırayla gelebilir
             string metin = Regex.Replace(string.Join(" ", satirlar.Select(s => s.Metin)), @"\s+", " ").Trim();
             // Altyazı belirirken/kaybolurken gelen bozuk okuma gönderilmez; durum değişmez, sonraki temiz okuma beklenir.
             if (metin.Length > 0 && !MetinKalitesi.Yeterli(metin))
@@ -391,7 +392,8 @@ namespace Canli
                 if (!Durdu) _durum.CeviriGeldi(en, "###");   // yer tutucu hemen kalksın
                 return;
             }
-            string tr = s.Okunamaz ? "###" : s.Tr;
+            // Model bozuk satıra çeviri yerine "OCR hatası" gibi not yazarsa gösterilmez (okunamaz sayılır).
+            string tr = s.Okunamaz || (s.Tr ?? "").IndexOf("OCR", StringComparison.OrdinalIgnoreCase) >= 0 ? "###" : s.Tr;
             _durum.YerelBellekYaz(en, tr);
             _durum.CeviriGeldi(en, tr);
             if (s.Kalan.HasValue) { _bekleyenKalan = s.Kalan.Value; KalanBosalt(); }

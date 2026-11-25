@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Canli.Goruntu;
 using System.Drawing;
 using System.Text.RegularExpressions;
 
@@ -51,7 +52,7 @@ namespace Canli.Mantik
 
         private static readonly Regex IkiHarf = new Regex("[A-Za-z]{2}", RegexOptions.Compiled);
 
-        private sealed class Satir { public string En; public double Zaman; public Rectangle Kutu; public bool Iyilesti; public string Tr; }
+        private sealed class Satir { public string En; public double Zaman; public Rectangle Kutu; public bool Iyilesti; public string Tr; public int TrHarf; }
         private sealed class Okuma { public string Metin; public double Zaman; public Satir Satir; }
         private readonly List<Okuma> _okumalar = new List<Okuma>();   // son YakinOkumaMs içindeki okumalar
 
@@ -152,7 +153,13 @@ namespace Canli.Mantik
             double simdi = _simdi();
             tr = (tr ?? "").Trim();
             bool okunamaz = tr.StartsWith("###", StringComparison.Ordinal);
-            bool gecerliSatir = _gecerli != null && Benzerlik.HarfOrani(en, _gecerli.En) >= AyniSatirHarfEsigi;
+            // Çevirinin satırı son okumalardan bulunur (satırın okuması o arada değişmiş olabilir: gürültü, iyileşme).
+            var okuma = _okumalar.LastOrDefault(o => o.Metin == en) ?? _okumalar.LastOrDefault(o => AyniOkuma(en, o.Metin));
+            Satir satir = okuma?.Satir;
+            bool gecerliSatir = _gecerli != null && (satir == _gecerli || (satir == null && AyniOkuma(en, _gecerli.En)));
+            int harf = Benzerlik.Harfler(en).Length;
+            // Yarım okumanın çevirisi, tamamınınkinden sonra gelirse yok sayılır.
+            if (gecerliSatir && !okunamaz && _gecerli.Tr != null && harf < _gecerli.TrHarf) return;
 
             if (gecerliSatir)
             {
@@ -163,14 +170,15 @@ namespace Canli.Mantik
                     return;
                 }
                 _gecerli.Tr = tr;
+                _gecerli.TrHarf = harf;
                 AnaGoster(tr, _gecerli.Kutu, simdi, _gecerli);
                 return;
             }
             if (okunamaz || tr.Length == 0) return;
 
             // Geç gelen: satır artık değişti ya da bitti. Gecikme, satırın ilk görüldüğü andan ölçülür.
-            Satir kaynak = null;
-            for (int i = _son.Count - 1; i >= 0; i--)
+            Satir kaynak = satir;
+            for (int i = _son.Count - 1; kaynak == null && i >= 0; i--)
                 if (Benzerlik.HarfOrani(en, _son[i].En) >= AyniSatirHarfEsigi) { kaynak = _son[i]; break; }
             if (kaynak == null || simdi - kaynak.Zaman >= GecCeviriMs) return;
             kaynak.Tr = tr;
@@ -197,6 +205,24 @@ namespace Canli.Mantik
             if (e.Length == 0 || y.Length <= e.Length) return false;
             int uzaklik = (int)Math.Round((1 - Benzerlik.Oran(e, y)) * y.Length);
             return uzaklik - (y.Length - e.Length) <= Math.Max(2, (int)(0.15 * e.Length));
+        }
+
+        /// <summary>OCR satırları ekrandaki sırayla: yukarıdan aşağı (aynı satır yüksekliğindekiler bir satır), soldan sağa.</summary>
+        public static List<OcrSatiri> Sirala(IReadOnlyList<OcrSatiri> satirlar)
+        {
+            var liste = satirlar.Where(x => x != null).ToList();
+            if (liste.Count < 2) return liste;
+            double yukseklik = Math.Max(1, liste.Average(x => (double)x.Kutu.Height));
+            var sonuc = new List<OcrSatiri>();
+            var kalan = liste.OrderBy(x => x.Kutu.Y + x.Kutu.Height / 2.0).ToList();
+            while (kalan.Count > 0)
+            {
+                double orta = kalan[0].Kutu.Y + kalan[0].Kutu.Height / 2.0;
+                var sira = kalan.Where(x => Math.Abs(x.Kutu.Y + x.Kutu.Height / 2.0 - orta) <= yukseklik * 0.5).OrderBy(x => x.Kutu.X).ToList();
+                sonuc.AddRange(sira);
+                kalan.RemoveAll(sira.Contains);
+            }
+            return sonuc;
         }
 
         private static bool AyniOkuma(string a, string b)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using Canli.Mantik;
 using Xunit;
 
@@ -75,6 +76,39 @@ namespace Canli.Testler
             _t += 200; Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up the pace, now the whole area knoW's we!re ere!", _kutu).Tur);
             _t += 200; Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up-th pce, nowthe whole- area khows we're here!", _kutu).Tur);
             _t += 200; Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up the pace, now the 'Whole area khowsswe're here!", _kutu).Tur);
+        }
+
+        [Fact]
+        public void ocr_satirlari_yukaridan_asagi_soldan_saga_birlesir()
+        {
+            var satirlar = new[]
+            {
+                new Canli.Goruntu.OcrSatiri { Metin = "it was far away...", Kutu = new Rectangle(400, 60, 300, 30) },
+                new Canli.Goruntu.OcrSatiri { Metin = "At least,", Kutu = new Rectangle(100, 62, 250, 30) },
+                new Canli.Goruntu.OcrSatiri { Metin = "Something large roaring.", Kutu = new Rectangle(150, 20, 500, 30) },
+            };
+            Assert.Equal("Something large roaring. At least, it was far away...",
+                         string.Join(" ", AltyaziDurumu.Sirala(satirlar).Select(x => x.Metin)));
+        }
+
+        [Fact]
+        public void gecerli_satirin_eski_okumasiyla_gelen_ceviri_ana_kutuda_gosterilir()
+        {
+            var d = Yeni();
+            d.Okundu("Let's now the whole area knows we're here!", _kutu);
+            _t += 200;
+            d.Okundu("Let's pick up the pace, now the whole area knows we're here!", _kutu);   // iyileşme
+            _t += 1500;
+            // İlk (yarım) okumanın çevirisi geldi: hâlâ ekrandaki satırın çevirisi; gri kutuya gitmez.
+            d.CeviriGeldi("Let's now the whole area knows we're here!", "Artık bütün bölge burada olduğumuzu biliyor!");
+            Assert.Equal("Artık bütün bölge burada olduğumuzu biliyor!", d.Simdi().AnaMetin);
+            Assert.Null(d.Simdi().Onceki);
+            d.CeviriGeldi("Let's pick up the pace, now the whole area knows we're here!", "Hızlanalım, bütün bölge burada olduğumuzu biliyor!");
+            Assert.Equal("Hızlanalım, bütün bölge burada olduğumuzu biliyor!", d.Simdi().AnaMetin);
+            Assert.Null(d.Simdi().Onceki);
+            // Yarım okumanın çevirisi tamamınınkinden sonra gelirse yok sayılır.
+            d.CeviriGeldi("Let's now the whole area knows we're here!", "Artık bütün bölge burada olduğumuzu biliyor!");
+            Assert.Equal("Hızlanalım, bütün bölge burada olduğumuzu biliyor!", d.Simdi().AnaMetin);
         }
 
         [Fact]

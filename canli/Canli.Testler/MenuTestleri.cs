@@ -275,6 +275,20 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public async Task ocr_notu_iceren_ceviri_gosterilmez()
+        {
+            var s = new Sahneler("{\"tr\":\"(OCR hatası nedeniyle anlaşılamadı)\",\"kaynak\":\"model\"}");
+            var c = s.Calistirici(new OnPlanBekcisi(""));
+            await c.Basla();
+            s.Ekran.Satirlar = new[] { "Something large roaring." };
+            c.YakalamaTik();
+            Assert.True(SpinWait.SpinUntil(() => s.CeviriIstegi == 1, 5000));
+            await Task.Delay(200);
+            c.YoklamaTik();
+            Assert.True(s.Kaplama.Ana == null || !s.Kaplama.Ana.Contains("OCR"), s.Kaplama.Ana);
+        }
+
+        [Fact]
         public async Task onbellek_isabeti_sunucuya_gitmez()
         {
             var s = new Sahneler("{\"tr\":\"x\"}",
