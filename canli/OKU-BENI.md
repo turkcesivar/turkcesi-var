@@ -51,8 +51,9 @@ seçilen ≤ 40 aday arasında ≥ 0,85 benzerlik; "AD: metin" önekli satırlar
 
 ## Altyazı gösterimi
 
-Her gelen çeviri ana kutuda gösterilir; yeni İngilizce satır gelince önceki Türkçe, yenisi gelene kadar ekranda kalır
-(hiçbir Türkçe yokken "…" yer tutucu). Ekrandakinden daha eski bir satırın geç gelen çevirisi yok sayılır. Bir önceki (başka satırın) çevirisi 4 sn soluk kutuda kalır; hızlı diyalogda iki satır birden okunabilir.
+Son konuşmalar tek kutuda alt alta, aynı renkte gösterilir (en yenisi en altta, en çok 3; eskiler 6 sn sonra
+kalkar). Geç gelen çeviri de gösterilir; yeni İngilizce satır gelince önceki Türkçe, yenisi gelene kadar kalır.
+Ekrandakinden daha eski bir satırın geç gelen çevirisi yok sayılır.
 Aynı satırın gürültülü okumaları (harf bazlı ≥ 0,80 benzerlik, kesik/yarım okuma, son 4 sn'lik okumalar) yeniden
 çevrilmez; yarım okunan satırın tamamı bir kez yeniden çevrilir. OCR satırları yukarıdan aşağı, soldan sağa birleştirilir.
 

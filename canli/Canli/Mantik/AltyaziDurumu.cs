@@ -44,6 +44,9 @@ namespace Canli.Mantik
         public const double IyilesmeKati = 1.15;
         /// <summary>Okuma, bu süre içinde görülen okumalardan birine benziyorsa o okumanın satırına bağlanır.</summary>
         public const double YakinOkumaMs = 4000;
+        /// <summary>Son konuşmalar alt alta (en yenisi en altta, aynı renkte): en çok bu kadar satır, eskiler bu süre sonra kalkar.</summary>
+        public const int EnCokKonusma = 3;
+        public const double GecmisMs = 6000;
         public const double YerelBellekEsigi = 0.85;
         public const int YerelBellekEnFazla = 2000;
         public const double TutmaMs = 1200, YerTutucuMs = 10000, GecCeviriMs = 5000,
@@ -54,7 +57,9 @@ namespace Canli.Mantik
 
         private sealed class Satir { public string En; public double Zaman; public Rectangle Kutu; public bool Iyilesti; public string Tr; public int TrHarf; }
         private sealed class Okuma { public string Metin; public double Zaman; public Satir Satir; }
-        private readonly List<Okuma> _okumalar = new List<Okuma>();   // son YakinOkumaMs içindeki okumalar
+        private readonly List<Okuma> _okumalar = new List<Okuma>();
+        private sealed class Gosterilen { public Satir Satir; public string Tr; public double Zaman; }
+        private readonly List<Gosterilen> _gecmis = new List<Gosterilen>();   // gösterilen çeviriler (en yenisi sonda)   // son YakinOkumaMs içindeki okumalar
 
         private readonly Func<double> _simdi;
         private readonly List<Satir> _son = new List<Satir>();   // son satırlar (en eski başta)
@@ -198,12 +203,11 @@ namespace Canli.Mantik
 
         private void AnaGoster(string tr, Rectangle kutu, double simdi, Satir satir)
         {
-            // En yeni çeviri ana kutuda; bir önceki (başka satırın) çevirisi hızlı diyalogda okunabilsin diye
-            // 4 sn soluk kutuda kalır.
-            if (_sonTr != null && _sonTr != tr && _sonTrSatir != satir && simdi - _sonTrZaman < OncekiSayilirMs)
-            {
-                _onceki = _sonTr; _oncekiBitis = simdi + OncekiMs;
-            }
+            // Konuşmalar alt alta birikir: aynı satırın yeni çevirisi kendi yerini günceller, başka satırınki eklenir.
+            var son = _gecmis.Count > 0 ? _gecmis[_gecmis.Count - 1] : null;
+            if (son != null && son.Satir == satir) { son.Tr = tr; son.Zaman = simdi; }
+            else _gecmis.Add(new Gosterilen { Satir = satir, Tr = tr, Zaman = simdi });
+            while (_gecmis.Count > EnCokKonusma) _gecmis.RemoveAt(0);
             _ana = tr; _anaTurkce = true; _anaKutu = kutu;
             _sonTr = tr; _sonTrSatir = satir; _sonTrZaman = simdi; _gizleZaman = 0;
         }
@@ -252,7 +256,17 @@ namespace Canli.Mantik
             if (_ana == YerTutucu && !_anaTurkce && simdi > _yerTutucuBitis) _ana = null;
             if (_gizleZaman > 0 && simdi > _gizleZaman && _gecerli == null) { _ana = null; _anaTurkce = false; _gizleZaman = 0; }
             if (_onceki != null && simdi > _oncekiBitis) _onceki = null;
-            return new GosterimDurumu { AnaMetin = _ana, AnaKutu = _anaKutu, Onceki = _onceki };
+            string metin = _ana;
+            if (_ana != null && _anaTurkce && _gecmis.Count > 1)
+            {
+                // En yenisi (ana) en altta; ondan önceki konuşmalar GecmisMs boyunca üstünde, aynı renkte.
+                var satirlar = new List<string>();
+                for (int i = 0; i < _gecmis.Count - 1; i++)
+                    if (simdi - _gecmis[i].Zaman < GecmisMs) satirlar.Add(_gecmis[i].Tr);
+                satirlar.Add(_ana);
+                metin = string.Join("\n", satirlar);
+            }
+            return new GosterimDurumu { AnaMetin = metin, AnaKutu = _anaKutu, Onceki = null };
         }
 
         public string YerelBellekBul(string en)

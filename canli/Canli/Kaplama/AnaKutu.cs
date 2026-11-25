@@ -55,7 +55,10 @@ namespace Canli.Kaplama
             if (kutuVar) { cx = bolge.X + kutu.X + kutu.Width / 2.0; cy = bolge.Y + kutu.Y + kutu.Height / 2.0; }
             else { cx = bolge.X + bolge.Width / 2.0; cy = bolge.Y + bolge.Height / 2.0; }
             Left = (int)(cx - w / 2.0);
-            Top = (int)(cy - h / 2.0);
+            // Alt kenar İngilizce satırın altına hizalanır: alt alta konuşmalar yukarı doğru büyür
+            // (tek satırda eskisi gibi satırı ortalar).
+            double alt = kutuVar ? bolge.Y + kutu.Bottom + 8 : cy + h / 2.0;
+            Top = (int)(alt - h);
             if (!Visible) Show();
             Opacity = Opaklik;
         }
