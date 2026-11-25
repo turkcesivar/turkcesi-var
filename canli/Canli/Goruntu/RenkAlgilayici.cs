@@ -19,9 +19,12 @@ namespace Canli.Goruntu
         private const int EnAzZeminUzakligi = 60;    // kutu kenarı (zemin) renginden uzaklık
         private const int KenarFarki = 60;           // komşu piksel bu kadar farklıysa "kenar"
         private const int EnAzParlaklik = 90;        // en parlak kanal bunun altındaysa gölge/çerçeve sayılır
+        private const int BilinenPayi = 25;          // bilinen renge bu kadar yakın aday atlanır
 
-        public static Color? YaziRengi(Bitmap b, IEnumerable<Rectangle> kutular)
+        /// <summary>haric: zaten bilinen renkler aday sayılmaz (bilinen gri ad baskınken yeni konuşma rengi bulunabilsin).</summary>
+        public static Color? YaziRengi(Bitmap b, IEnumerable<Rectangle> kutular, IEnumerable<Color> haric = null)
         {
+            var bilinen = haric == null ? new List<Color>() : haric.ToList();
             int w = b.Width, h = b.Height;
             var px = new int[w * h];
             var kilit = b.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
@@ -67,6 +70,7 @@ namespace Canli.Goruntu
                 if (Uzaklik(renk.R, renk.G, renk.B, zr, zg, zb) < EnAzZeminUzakligi) continue;
                 // Yazının gölgesi/çerçevesi (koyu, ince, kenarlı) yazı rengi değildir: altyazı hiç bu kadar koyu olmaz.
                 if (Math.Max(renk.R, Math.Max(renk.G, renk.B)) < EnAzParlaklik) continue;
+                if (bilinen.Any(k => Uzaklik(k.R, k.G, k.B, renk.R, renk.G, renk.B) <= BilinenPayi)) continue;
                 return renk;
             }
             return null;
@@ -146,6 +150,9 @@ namespace Canli.Goruntu
 
         public System.Collections.Generic.IReadOnlyList<System.Drawing.Color> Renkler { get { return _renkler; } }
 
+        /// <summary>Son örnekte bulunan (bilinmeyen) aday renk; tanı kaydı için.</summary>
+        public System.Drawing.Color? SonAday { get; private set; }
+
         public bool OrneklemeZamani() { return _renkler.Count < EnCokRenk && _saat() - _son >= AralikMs; }
 
         /// <summary>Bir örnek işler; yeni bir renk öğrenildiyse true.</summary>
@@ -153,7 +160,8 @@ namespace Canli.Goruntu
         {
             _son = _saat();
             if (_renkler.Count >= EnCokRenk) return false;
-            var c = RenkAlgilayici.YaziRengi(ham, kutular);
+            var c = RenkAlgilayici.YaziRengi(ham, kutular, _renkler);
+            SonAday = c;
             if (!c.HasValue) return false;
             foreach (var r in _renkler)
                 if (RenkAlgilayici.Uzaklik(r.R, r.G, r.B, c.Value.R, c.Value.G, c.Value.B) <= AyniRenkPayi) return false;

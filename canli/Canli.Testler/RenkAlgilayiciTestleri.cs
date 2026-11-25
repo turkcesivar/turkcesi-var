@@ -216,6 +216,34 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public void bilinen_renk_baskinken_yeni_konusma_rengini_ogrenir()
+        {
+            // Metro: bilinen gri (ad/ipucu) kutuda baskın, yeni konuşmacının yeşil konuşması daha az piksel.
+            // Algılayıcı bilinen rengi döndürürse örnek boşa gider, yeşil hiç öğrenilmez, konuşma süzgeçte silinir.
+            var gri = Color.FromArgb(199, 199, 199);
+            var yesil = Color.FromArgb(120, 220, 90);
+            using (var b = new Bitmap(1600, 90))
+            {
+                using (var g = Graphics.FromImage(b))
+                using (var f = new Font("Arial", 30, FontStyle.Bold, GraphicsUnit.Pixel))
+                {
+                    g.Clear(Color.FromArgb(25, 25, 30));
+                    g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                    using (var gb = new SolidBrush(gri)) g.DrawString("SOLDIER: Keep your weapon trained on the opening", f, gb, 20, 25);
+                    using (var yb = new SolidBrush(yesil)) g.DrawString("Shoot them now!", f, yb, 1300 - 20, 25);
+                }
+                var kutular = new[] { new Rectangle(15, 22, 1580, 45) };
+                double t = 0;
+                var o = new OtomatikRenk(() => t, new[] { gri });
+                bool ogrendi = false;
+                for (int i = 0; i < 3; i++) { t += 2100; ogrendi |= o.Ornekle(b, kutular); }
+                Assert.True(ogrendi);
+                Assert.Equal(2, o.Renkler.Count);
+                Assert.True(Uzaklik(o.Renkler[1], yesil) <= 40, o.Renkler[1].ToString());
+            }
+        }
+
+        [Fact]
         public void oylama_ayni_renk_uc_kez_gelince_karar_verir()
         {
             var o = new RenkOylamasi();

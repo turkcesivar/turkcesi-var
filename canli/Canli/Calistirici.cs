@@ -57,6 +57,7 @@ namespace Canli
         private Profil _profil;
         private RenkKipi _kip;
         private bool _basladi, _duraklat, _arkada;
+        private bool _sonSuzulmusBos;   // son süzülmüş altyazı okuması boştu (teşhis: suzgecte_kayip)
         private Rectangle _ekran, _bolge;
         private long _sonImza;
         private byte[] _ekranImza;
@@ -329,6 +330,7 @@ namespace Canli
             double ocrMs = _saat() - t0;
             satirlar = AltyaziDurumu.Sirala(satirlar);   // iki satırlık altyazı OCR'da karışık sırayla gelebilir
             string metin = Regex.Replace(string.Join(" ", satirlar.Select(s => s.Metin)), @"\s+", " ").Trim();
+            _sonSuzulmusBos = metin.Count(char.IsLetter) < 3;
             // Altyazı belirirken/kaybolurken gelen bozuk okuma gönderilmez; durum değişmez, sonraki temiz okuma beklenir.
             if (metin.Length > 0 && !MetinKalitesi.Yeterli(metin))
             {
@@ -366,7 +368,15 @@ namespace Canli
             var hamSatirlar = _ekranOkuyucu.Oku(ham);
             var kutular = hamSatirlar.Where(s => s.Metin.Count(char.IsLetter) >= 3).Select(s => s.Kutu).ToList();
             if (kutular.Count == 0) { _otoRenk.Ornekle(ham, kutular); return; }
-            if (!_otoRenk.Ornekle(ham, kutular)) return;
+            bool ogrendi = _otoRenk.Ornekle(ham, kutular);
+            // Teşhis: ekranda düzgün yazı var ama süzgeç hepsini sildi (bilinmeyen altyazı rengi).
+            string hamMetin = Regex.Replace(string.Join(" ", hamSatirlar.Select(s => s.Metin)), @"\s+", " ").Trim();
+            if (!ogrendi && _sonSuzulmusBos && hamMetin.Count(char.IsLetter) >= 8 && MetinKalitesi.Yeterli(hamMetin))
+            {
+                var aday = _otoRenk.SonAday;
+                _tani.Yaz("suzgecte_kayip", ("en", hamMetin), ("aday", aday.HasValue ? RenkMetni(new[] { aday.Value }) : null));
+            }
+            if (!ogrendi) return;
             _disk?.RenkYaz(_komut.Oyun, _otoRenk.Renkler);
             _tani.Yaz("renk", ("kaynak", "algilandi"), ("renkler", RenkMetni(_otoRenk.Renkler)));
             _sonImza = 0;   // yeni süzgeçle hemen yeniden oku
