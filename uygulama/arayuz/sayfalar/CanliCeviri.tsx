@@ -7,10 +7,10 @@ import { Bildirim, Dugme, Iskelet, sayi } from "../bilesenler/temel.js";
 import { useYumusakKapat } from "../bilesenler/yumusak.js";
 import {
   DENEME_DAVETI, DENEME_KARTI, DIL_ACIKLAMA, DIL_ADIMLAR, DIL_BASLIK, DIL_GELISMIS, DIL_GEREKLI_IPUCU, DIL_KOMUTU, DIL_WIN10,
-  CIHAZ_EKLE_ACIKLAMA, CIHAZ_EKLENDI, DENEME_DESTEK_ACIKLAMA, DENEME_HAK_BITTI, ESLESTIRME_ACIKLAMA_SON, ESLESTIRME_BASKA_BILGISAYAR, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
+  CIHAZ_EKLE_ACIKLAMA, CIHAZ_EKLENDI, DENEME_DESTEK_ACIKLAMA, DENEME_HAK_BITTI, ODEME_ACILDI, ESLESTIRME_BASKA_BILGISAYAR, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
   SINIRLAR, SINIRLAR_BASLIK, SURE_BITTI, durumSatiri, hileEngel, kodMetni, paketliEngel,
 } from "../canli-metinler.js";
-import { DESTEK_ADRESI, DISCORD_ADRESI } from "../sabitler.js";
+import { DISCORD_ADRESI } from "../sabitler.js";
 
 const ac = (url: string) => void window.tv.disBaglanti(url);
 
@@ -144,36 +144,51 @@ function Cubuk({ etiket, kalan, tavan }: { etiket: string; kalan: number; tavan:
 }
 
 /** Deneme sürerken (ya da hakkı bitince) destekçiliğe geçiş: numara al, Kreosus'ta mesaja yaz. */
+type Seviye = "destekci" | "ust" | "ek";
+
+/** Aylık seviye seçimi: seçilen seviyenin bu bilgisayara özel Kreosus ödeme bağlantısı tarayıcıda açılır. */
+function SeviyeSecimi({ isleniyor, sec, ana = true }: { isleniyor: boolean; sec: (s: Seviye) => void; ana?: boolean }) {
+  return (
+    <div className="eylemler">
+      <Dugme tur={ana ? "ana" : "ikincil"} buyuk simge="kalp" pasif={isleniyor} onClick={() => sec("destekci")}>
+        Destekçi ol · aylık 75 ₺
+      </Dugme>
+      <Dugme tur="ikincil" buyuk simge="kalp" pasif={isleniyor} onClick={() => sec("ust")}>
+        Üst seviye · aylık 200 ₺
+      </Dugme>
+    </div>
+  );
+}
+
+/** Ödeme sayfası açıldıktan sonra: numara arka planda yoklanır, ödeme gelince lisans kendiliğinden açılır. */
+function OdemeBekleniyor({ numara }: { numara: string }) {
+  return (
+    <div className="canli-eslesme">
+      <p>
+        {ODEME_ACILDI} <span className="soluk">(Eşleştirme numaran: <strong>{numara}</strong>)</span>
+      </p>
+      <p className="soluk">{ESLESTIRME_BASKA_BILGISAYAR}</p>
+      <div className="eylemler">
+        <Dugme tur="ikincil" simge="sohbet" onClick={() => ac(DISCORD_ADRESI)}>
+          Sorun mu var? Discord&apos;a yaz
+        </Dugme>
+      </div>
+    </div>
+  );
+}
+
+/** Deneme sürerken (ya da hakkı bitince) destekçiliğe geçiş. */
 function DenemedenDestekci({
-  eslesme, hakBitti, isleniyor, eslestir,
-}: { eslesme?: { numara: string }; hakBitti: boolean; isleniyor: boolean; eslestir: () => void }) {
+  eslesme, hakBitti, isleniyor, sec,
+}: { eslesme?: { numara: string }; hakBitti: boolean; isleniyor: boolean; sec: (s: Seviye) => void }) {
   return (
     <section className="panel" aria-label="Destekçi ol">
       <h2 className="panel-baslik">
         <Simge ad="kalp" /> Destekçi olarak devam et
       </h2>
       <p>{hakBitti ? DENEME_HAK_BITTI : DENEME_DESTEK_ACIKLAMA}</p>
-      {eslesme ? (
-        <div className="canli-eslesme">
-          <p>
-            Eşleştirme numaran: <strong className="canli-numara">{eslesme.numara}</strong> — Kreosus&apos;ta destek olurken bu numarayı mesaj kısmına yaz. {ESLESTIRME_ACIKLAMA_SON}
-          </p>
-          <div className="eylemler">
-            <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
-              Kreosus&apos;u aç
-            </Dugme>
-            <Dugme tur="ikincil" simge="sohbet" onClick={() => ac(DISCORD_ADRESI)}>
-              Discord&apos;da destek ol
-            </Dugme>
-          </div>
-        </div>
-      ) : (
-        <div className="eylemler">
-          <Dugme tur={hakBitti ? "ana" : "ikincil"} simge="kalp" pasif={isleniyor} onClick={eslestir}>
-            Destekçi ol
-          </Dugme>
-        </div>
-      )}
+      {eslesme && <OdemeBekleniyor numara={eslesme.numara} />}
+      <SeviyeSecimi isleniyor={isleniyor} sec={sec} ana={hakBitti} />
     </section>
   );
 }
@@ -301,6 +316,9 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
     }
   };
 
+  /** Seviye seçildi: ödeme bağlantısı ana süreçte açılır; numara arka planda yoklanır. */
+  const destekOl = (s: Seviye) => void islem(() => window.tv.canliDestekOl(s));
+
   let govde: React.ReactNode;
   if (cihazHatasi) {
     govde = (
@@ -384,32 +402,9 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             <Simge ad="canli" /> Canlı çeviri
           </h2>
           <p>Türkçesi olmayan oyunları, ekrandaki yazıyı anında çevirerek beklemeden oynamanı sağlar.</p>
-          {d.eslesme ? (
-            <>
-              <div className="canli-eslesme">
-                <p>
-                  Eşleştirme numaran: <strong className="canli-numara">{d.eslesme.numara}</strong> — Kreosus&apos;ta destek olurken bu numarayı mesaj kısmına yaz. {ESLESTIRME_ACIKLAMA_SON}
-                </p>
-                <p className="soluk">{ESLESTIRME_BASKA_BILGISAYAR}</p>
-                <div className="eylemler">
-                  <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
-                    Kreosus&apos;u aç
-                  </Dugme>
-                  <Dugme tur="ikincil" simge="sohbet" onClick={() => ac(DISCORD_ADRESI)}>
-                    Discord&apos;da destek ol
-                  </Dugme>
-                </div>
-              </div>
-              {denemeOlur && <div className="eylemler">{denemeDugmesi("ikincil")}</div>}
-            </>
-          ) : (
-            <div className="eylemler">
-              {denemeDugmesi("ana")}
-              <Dugme tur="ikincil" buyuk simge="kalp" pasif={isleniyor} onClick={() => void islem(() => window.tv.canliEslestir())}>
-                Destek ol ve etkinleştir
-              </Dugme>
-            </div>
-          )}
+          {d.eslesme && <OdemeBekleniyor numara={d.eslesme.numara} />}
+          {denemeOlur && <div className="eylemler">{denemeDugmesi(d.eslesme ? "ikincil" : "ana")}</div>}
+          <SeviyeSecimi isleniyor={isleniyor} sec={destekOl} ana={!denemeOlur} />
         </section>
         <Nasil />
         <section className="panel" aria-label="Neden ücretli">
@@ -498,15 +493,15 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             eslesme={d.eslesme}
             hakBitti={hakBlogu}
             isleniyor={isleniyor}
-            eslestir={() => void islem(() => window.tv.canliEslestir())}
+            sec={destekOl}
           />
         )}
         {hakBlogu && tur !== "deneme" && (
           <Bildirim tur="uyari">
             <p>{HAK_BITTI}</p>
             <div className="eylemler">
-              <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
-                Ek hak al
+              <Dugme tur="ana" simge="kalp" pasif={isleniyor} onClick={() => destekOl("ek")}>
+                Ek hak al · 30 ₺ (+6.000 satır)
               </Dugme>
             </div>
           </Bildirim>
@@ -515,9 +510,11 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
           <Bildirim tur="uyari">
             <p>{GUN_BITTI}</p>
             <div className="eylemler">
-              <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
-                Seviyeni yükselt
-              </Dugme>
+              {tur === "destekci" && (
+                <Dugme tur="ana" simge="kalp" pasif={isleniyor} onClick={() => destekOl("ust")}>
+                  Üst seviyeye geç · aylık 200 ₺
+                </Dugme>
+              )}
             </div>
           </Bildirim>
         )}

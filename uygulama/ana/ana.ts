@@ -33,6 +33,8 @@ import {
 const burasi = dirname(fileURLToPath(import.meta.url));
 const KLASOR = uygulamaKlasoru();
 const GORSEL = "tv-gorsel";
+/** Kreosus ödeme bağlantısı kapalıyken açılan genel destek sayfası (arayüzdeki DESTEK_ADRESI ile aynı). */
+const KREOSUS_SAYFASI = "https://kreosus.com/turkcesivar";
 const gelistirme = !app.isPackaged;
 /** Uygulamayla gelen Türkçe paketler: kurulumda resources\paketler, geliştirmede depo kökündeki paketler\. */
 const PAKET_KLASORU = gelistirme ? join(app.getAppPath(), "paketler") : join(process.resourcesPath, "paketler");
@@ -289,6 +291,21 @@ function ipcKur() {
   ipcMain.handle("tv:canliYenile", async () => (await canliHazir()).yenile());
   ipcMain.handle("tv:canliDeneme", async () => (await canliHazir()).deneme());
   ipcMain.handle("tv:canliEslestir", async () => (await canliHazir()).eslestirBaslat());
+  ipcMain.handle("tv:canliDestekOl", async (_e, seviye: unknown) => {
+    if (seviye !== "destekci" && seviye !== "ust" && seviye !== "ek") return { hata: "gecersiz" };
+    const y = await canliHazir();
+    const r = await y.destekOl(seviye);
+    if (r.hata === "odeme_kapali") {
+      // Sunucuda ödeme bağlantısı kapalıysa eski yol: numara alınır, genel Kreosus sayfası açılır.
+      const e = await y.eslestirBaslat();
+      if (!e.hata) void shell.openExternal(KREOSUS_SAYFASI);
+      return e;
+    }
+    if (r.hata) return { hata: r.hata };
+    // Yalnız Kreosus'un kendi adresi açılır (sunucu yanıtı da denetlenir).
+    if (r.url && r.url.startsWith("https://kreosus.com/")) void shell.openExternal(r.url);
+    return {};
+  });
   ipcMain.handle("tv:canliCihazEkle", async (_e, numara: unknown) => {
     // Arayüzden gelen değer denetlenir: yalnız TV-XXXX biçimi sunucuya gider.
     const n = typeof numara === "string" ? numara.trim().toUpperCase() : "";

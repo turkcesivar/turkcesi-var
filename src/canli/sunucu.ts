@@ -35,6 +35,11 @@ export class CanliSunucu {
     return this.istek("POST", "/eslestir", null);
   }
 
+  /** Bu bilgisayarın eşleştirme numarasıyla Kreosus ödeme bağlantısı (oyuncu hiçbir şey yazmaz). */
+  odemeBaglantisi(seviye: "destekci" | "ust" | "ek"): Promise<SunucuSonucu<{ url: string; numara: string; bitis: number }>> {
+    return this.istek("POST", "/odeme-baglantisi", null, { seviye });
+  }
+
   /** Lisanslı bu bilgisayar, başka bilgisayarın eşleştirme numarasını aynı lisansa bağlar. */
   cihazEkle(lisans: string, numara: string): Promise<SunucuSonucu<{ tamam: boolean }>> {
     return this.istek("POST", "/cihaz-ekle", lisans, { numara });

@@ -96,6 +96,15 @@ describe("CanliSunucu", () => {
     expect(JSON.parse(String(cagrilar[0]!.init.body))).toEqual({ numara: "TV-7K2M" });
   });
 
+  it("odeme_baglantisi_seviye_govdesiyle_post_lisanssiz", async () => {
+    const { f, cagrilar } = sahte(async () => yanit(200, { url: "https://kreosus.com/pay/x", numara: "TV-7K2M", bitis: 9 }));
+    const s = new CanliSunucu({ taban: TABAN, cihaz: "C1", fetch: f });
+    expect(await s.odemeBaglantisi("ek")).toEqual({ tamam: true, veri: { url: "https://kreosus.com/pay/x", numara: "TV-7K2M", bitis: 9 } });
+    expect(cagrilar[0]!.url).toBe(`${TABAN}/odeme-baglantisi`);
+    expect(JSON.parse(String(cagrilar[0]!.init.body))).toEqual({ seviye: "ek" });
+    expect((cagrilar[0]!.init.headers as Record<string, string>)["Authorization"]).toBeUndefined();
+  });
+
   it("cihaz_ekle_hata_kodu", async () => {
     const { f } = sahte(async () => yanit(409, { hata: "numara_bagli" }));
     const s = new CanliSunucu({ taban: TABAN, cihaz: "C1", fetch: f });

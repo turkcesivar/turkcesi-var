@@ -299,6 +299,22 @@ export class CanliYonetici {
     return {};
   }
 
+  /**
+   * Destek ol: sunucudan bu bilgisayara özel Kreosus ödeme bağlantısı alınır, numara eşleşme olarak kaydedilip
+   * yoklanır (ödeme gelince lisans kendiliğinden teslim edilir). Bağlantıyı ana süreç tarayıcıda açar.
+   */
+  async destekOl(seviye: "destekci" | "ust" | "ek"): Promise<{ hata?: string; url?: string }> {
+    const r = await this.o.sunucu.odemeBaglantisi(seviye);
+    if (!r.tamam) return { hata: r.hata };
+    if (this.kapandi) return { hata: "kapandi" };
+    const e: Eslesme = { numara: r.veri.numara, bitis: r.veri.bitis };
+    this.d.eslesme = e;
+    this.eslesmeYaz(e);
+    this.eslesmeYoklamasiBaslat();
+    this.yay();
+    return { url: r.veri.url };
+  }
+
   /** Başka bilgisayarın eşleştirme numarasını bu bilgisayarın lisansına bağlar (yalnız ücretli lisans; sunucu denetler). */
   async cihazEkle(numara: string): Promise<{ hata?: string }> {
     const lisans = this.lisansOku();

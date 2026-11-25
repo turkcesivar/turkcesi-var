@@ -66,6 +66,10 @@ function sahteSunucu(durum: (lisans: string | null, numara?: string) => DurumYan
       tamam: true,
       veri: { numara: "123456", bitis: Date.now() + 3600_000 },
     })),
+    odemeBaglantisi: vi.fn(async (_s: string): Promise<SunucuSonucu<{ url: string; numara: string; bitis: number }>> => ({
+      tamam: true,
+      veri: { url: "https://kreosus.com/pay/x", numara: "TV-7K2M", bitis: Date.now() + 3600_000 },
+    })),
     cihazEkle: vi.fn(async (_l: string, _n: string): Promise<SunucuSonucu<{ tamam: boolean }>> => ({ tamam: true, veri: { tamam: true } })),
   };
 }
@@ -114,6 +118,18 @@ afterEach(() => {
 });
 
 describe("CanliYonetici", () => {
+  it("destek_ol_baglantiyi_doner_numarayi_eslesme_olarak_yoklar", async () => {
+    const { y, depo, sunucu } = kur();
+    expect(await y.destekOl("destekci")).toEqual({ url: "https://kreosus.com/pay/x" });
+    expect(sunucu.odemeBaglantisi).toHaveBeenCalledWith("destekci");
+    expect(y.durum().eslesme?.numara).toBe("TV-7K2M");
+    expect(depo.eslesme?.numara).toBe("TV-7K2M");
+    sunucu.durum.mockClear();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(sunucu.durum).toHaveBeenCalledWith(null, "TV-7K2M");
+    y.kapat();
+  });
+
   it("cihaz_ekle_kayitli_lisansla_sunucuya_gider", async () => {
     const { y, depo, sunucu } = kur();
     depo.lisans = null;

@@ -17,6 +17,7 @@ function kur(d: CanliDurum, ek: Record<string, unknown> = {}) {
     canliDeneme: vi.fn(() => Promise.resolve({})),
     canliEslestir: vi.fn(() => Promise.resolve({})),
     canliCihazEkle: vi.fn(() => Promise.resolve({})),
+    canliDestekOl: vi.fn(() => Promise.resolve({})),
     canliBaslat: vi.fn(() => Promise.resolve()),
     canliDurdur: vi.fn(() => Promise.resolve()),
     canliDilDenetle: vi.fn(() => Promise.resolve()),
@@ -108,17 +109,20 @@ describe("Canlı Çeviri sayfası", () => {
     expect(tv.canliDeneme).not.toHaveBeenCalled();
   });
 
-  it("eslestirme_numarasi_gosterilir", async () => {
-    const tv = kur(taban, { canliEslestir: vi.fn(() => Promise.resolve({})) });
+  it("lisanssiz_seviye_secince_odeme_baglantisi_ve_bekleme_metni", async () => {
+    const tv = kur(taban);
     tv.canliDurum.mockResolvedValueOnce(taban);
     render(<CanliCeviri onOyunaGit={vi.fn()} />);
-    const dugme = await screen.findByRole("button", { name: /Destek ol ve etkinleştir/ });
-    tv.canliDurum.mockResolvedValue({ ...taban, eslesme: { numara: "482913", bitis: Date.now() + 1e6 } });
+    const dugme = await screen.findByRole("button", { name: /Destekçi ol · aylık 75/ });
+    tv.canliDurum.mockResolvedValue({ ...taban, eslesme: { numara: "TV-482A", bitis: Date.now() + 1e6 } });
     fireEvent.click(dugme);
-    expect(await screen.findByText("482913")).toBeTruthy();
-    expect(screen.getByText(/Ödemen gelince canlı çeviri bu bilgisayarda kendiliğinden açılır/)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Kreosus'u aç/ }));
-    expect(tv.disBaglanti).toHaveBeenCalledWith("https://kreosus.com/turkcesivar");
+    await waitFor(() => expect(tv.canliDestekOl).toHaveBeenCalledWith("destekci"));
+    expect(await screen.findByText("TV-482A")).toBeTruthy();
+    expect(screen.getByText(/Ödeme sayfası tarayıcında açıldı/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Üst seviye · aylık 200/ }));
+    await waitFor(() => expect(tv.canliDestekOl).toHaveBeenCalledWith("ust"));
+    // Mesaja numara yazma talimatı artık yok (Kreosus ödeme ekranında mesaj alanı yok).
+    expect(screen.queryByText(/mesaj kısmına yaz/)).toBeNull();
   });
 
   it("kontrol_ekrani_kalan_cubugu", async () => {
@@ -229,7 +233,7 @@ describe("Canlı Çeviri sayfası", () => {
   it("suresi_biten_denemede_deneme_dugmesi_yok", async () => {
     kur({ ...taban, lisans: { durum: "suresi_bitti", tur: "deneme" } });
     render(<CanliCeviri onOyunaGit={vi.fn()} />);
-    expect(await screen.findByRole("button", { name: /Destek ol ve etkinleştir/ })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /Destekçi ol · aylık 75/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /7 gün ücretsiz dene/ })).toBeNull();
   });
 
@@ -300,12 +304,12 @@ describe("Canlı Çeviri sayfası", () => {
     const tv = kur(deneme);
     render(<CanliCeviri onOyunaGit={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: /Destekçi ol/ }));
-    await waitFor(() => expect(tv.canliEslestir).toHaveBeenCalled());
+    await waitFor(() => expect(tv.canliDestekOl).toHaveBeenCalledWith("destekci"));
     cleanup();
     kur({ ...deneme, eslesme: { numara: "TV-7K2M", bitis: Date.now() + 3600_000 } });
     render(<CanliCeviri onOyunaGit={() => {}} />);
     expect(await screen.findByText("TV-7K2M")).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Kreosus/ })).toBeTruthy();
+    expect(screen.getByText(/Ödeme sayfası tarayıcında açıldı/)).toBeTruthy();
     // Deneme sürerken Başlat düğmesi de yerinde.
     expect(screen.getByRole("button", { name: /Canlı Çeviriyi Başlat/ })).toBeTruthy();
   });
@@ -325,10 +329,16 @@ describe("Canlı Çeviri sayfası", () => {
   });
   it("denemede_destek_ol_hatasi_gosterilir", async () => {
     kur({ ...taban, lisans: { durum: "etkin", tur: "deneme", kalan: 1500 } }, {
-      canliEslestir: vi.fn(() => Promise.resolve({ hata: "hiz" })),
+      canliDestekOl: vi.fn(() => Promise.resolve({ hata: "hiz" })),
     });
     render(<CanliCeviri onOyunaGit={() => {}} />);
     fireEvent.click(await screen.findByRole("button", { name: /Destekçi ol/ }));
     expect(await screen.findByText(kodMetni("hiz"))).toBeTruthy();
+  });
+  it("destekcide_hak_bitince_ek_hak_30_tl_baglantisi", async () => {
+    const tv = kur({ ...taban, lisans: { durum: "hak_bitti", tur: "destekci", kalan: 0, gunKalan: 100 } });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: /Ek hak al · 30/ }));
+    await waitFor(() => expect(tv.canliDestekOl).toHaveBeenCalledWith("ek"));
   });
 });
