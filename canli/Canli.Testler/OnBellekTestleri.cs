@@ -44,6 +44,20 @@ namespace Canli.Testler
         }
 
         [Fact]
+        public void sayi_ya_da_olumsuzluk_farki_bulanik_eslesmez()
+        {
+            var b = Yap(("You owe me 500 dollars.", "Bana 500 dolar borçlusun.", false),
+                        ("Chapter 1", "Bölüm 1", true),
+                        ("I can't do that.", "Bunu yapamam.", false));
+            Assert.Null(b.AltyaziBul("You owe me 300 dollars."));
+            Assert.Null(b.MenuBul("Chapter 2"));
+            Assert.Null(b.AltyaziBul("I can do that."));
+            // OCR harf hatası (sayı ve olumsuzluk aynı) yine bulunur.
+            Assert.Equal("Bana 500 dolar borçlusun.", b.AltyaziBul("You owe me 500 dollers."));
+            Assert.Equal("Bunu yapamam.", b.AltyaziBul("I can't d0 that."));
+        }
+
+        [Fact]
         public void konusmaci_oneki()
         {
             var b = Yap(("Where is the money?", "Para nerede?", false));

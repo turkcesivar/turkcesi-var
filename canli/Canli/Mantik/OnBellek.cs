@@ -122,12 +122,29 @@ namespace Canli.Mantik
             }
             string bulunan = null;
             double enIyi = 0;
+            string imza = AnlamImzasi(q);
             foreach (int id in dokunulan)
             {
                 double o = Benzerlik.Oran(d.Anahtar[id], q);
-                if (o >= Esik && o > enIyi) { enIyi = o; bulunan = d.Ceviri[id]; }
+                // Sayı ya da olumsuzluk farkı tek harf gibi görünse de anlamı değiştirir: bulanık eşleşmede aynı olmalı.
+                if (o >= Esik && o > enIyi && AnlamImzasi(d.Anahtar[id]) == imza) { enIyi = o; bulunan = d.Ceviri[id]; }
             }
             return bulunan;
+        }
+
+        private static readonly Regex SayiDeseni = new Regex(@"(?<![\p{L}\d])\d+(?:[.,]\d+)*(?![\p{L}\d])", RegexOptions.Compiled);
+        private static readonly Regex Olumsuz = new Regex(@"\b(?:not|no|never|nothing|nobody|none|nowhere)\b|\p{L}n't\b", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Tek başına duran sayılar + olumsuzluk sayısı. Harfe bitişik rakamlar (OCR'ın "o"yu "0" okuması: "Enz0") sayılmaz.
+        /// Girdi küçük harfe sadeleştirilmiştir.
+        /// </summary>
+        private static string AnlamImzasi(string s)
+        {
+            var sb = new StringBuilder();
+            foreach (Match m in SayiDeseni.Matches(s)) sb.Append(m.Value).Append(',');
+            sb.Append('|').Append(Olumsuz.Matches(s).Count);
+            return sb.ToString();
         }
 
         private static bool UzunlukUygun(int a, int b)
