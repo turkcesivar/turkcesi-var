@@ -34,7 +34,7 @@ export const NEDEN_UCRETLI =
 
 export const HAK_BITTI = "Bu ayki çeviri hakkın doldu. Hakkın yenilenene kadar yalnızca daha önce çevrilmiş satırlar görünecek.";
 export const GUN_BITTI = "Bugünkü çeviri hakkın doldu; yarın 00:00'da yenilenir. Bu arada yalnızca daha önce çevrilmiş satırlar görünür.";
-export const SURE_BITTI = "Canlı çeviri lisansının süresi doldu. Yeniden destek olursan aynı bilgisayarda kaldığın yerden devam edersin.";
+export const SURE_BITTI = "Canlı çeviri lisansının süresi doldu. Yeniden destek olursan canlı çeviri bu bilgisayarda yeniden açılır (önceki dönemden kalan hak devretmez).";
 
 export function durumSatiri(calisma: string, oyunAdi?: string): string {
   switch (calisma) {

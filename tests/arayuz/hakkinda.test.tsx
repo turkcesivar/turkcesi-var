@@ -22,7 +22,7 @@ describe("Hakkında", () => {
     expect(disBaglanti).toHaveBeenLastCalledWith("https://discord.gg/nnNUCMUBJx");
     fireEvent.click(screen.getByRole("button", { name: "Kullanım koşulları" }));
     expect(screen.getByRole("dialog", { name: "Kullanım koşulları" })).toBeTruthy();
-    expect(screen.getByText(/Ücretsizdir, garanti verilmez/)).toBeTruthy();
+    expect(screen.getByText(/Ücretsiz kısım ve garanti/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Kapat" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });

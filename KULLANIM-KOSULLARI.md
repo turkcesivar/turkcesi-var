@@ -1,25 +1,24 @@
 # Türkçesi Var — Kullanım Koşulları
 
-Sürüm 1 · 14 Kasım 2026
+Sürüm 2 · 26 Kasım 2026
 
 Türkçesi Var'ı kurmadan ve kullanmadan önce lütfen bu koşulları oku. "Kabul ediyorum" dersen bu koşulları kabul etmiş olursun. Kabul etmiyorsan uygulamayı kurma ve kullanma.
 
 ## 1. Uygulama ne yapar?
 
-- Bilgisayarındaki desteklenen oyunların metin ve yazı tipi dosyalarını, uygulamayla gelen Türkçe çevirilerle değiştirir.
-- Değiştirmeden önce oyunun değişecek dosyalarının orijinallerini yedekler. "Türkçeyi kaldır" ile oyun bu yedekten eski hâline döner.
-- Oyuna program, DLL ya da arka planda çalışan bir şey eklemez.
+- **Türkçe paketler (ücretsiz):** Bilgisayarındaki desteklenen oyunların metin ve yazı tipi dosyalarını, uygulamayla gelen Türkçe çevirilerle değiştirir. Değiştirmeden önce oyunun değişecek dosyalarının orijinallerini yedekler. "Türkçeyi kaldır" ile oyun bu yedekten eski hâline döner. Oyuna program, DLL ya da arka planda çalışan bir şey eklemez.
+- **Canlı Çeviri (isteğe bağlı, ücretli):** Türkçe paketi olmayan oyunlarda ekrandaki İngilizce yazıyı okur, çevirtir ve Türkçesini İngilizcenin üstüne yazar. Ayrıntılar 5. bölümde.
 
-## 2. Ücretsizdir, garanti verilmez
+## 2. Ücretsiz kısım ve garanti
 
-- Türkçesi Var ücretsizdir ve "olduğu gibi" sunulur. GNU GPL v3.0 lisansı gereği hiçbir garanti verilmez.
+- Türkçe paketler ücretsizdir ve öyle kalacaktır. Uygulama "olduğu gibi" sunulur; GNU GPL v3.0 lisansı gereği hiçbir garanti verilmez.
 - Yedek alma ve geri alma özelliklerine rağmen bir oyunun bozulması, kayıt dosyalarının zarar görmesi ya da başka bir kayıp yaşanmasından geliştirici sorumlu tutulamaz.
 - Bir sorun olursa önce "Türkçeyi kaldır"ı dene. Olmazsa Steam'de oyuna sağ tıkla → Özellikler → Yüklü Dosyalar → "Oyun dosyalarının bütünlüğünü doğrula" ile oyunu onarabilirsin.
 
 ## 3. Oyunların kendi kuralları
 
 - Bazı oyunların kullanım şartları oyun dosyalarının değiştirilmesine izin vermeyebilir. Bu şartlara uymak senin sorumluluğundur.
-- Hile koruması (anti-cheat) olan çevrimiçi oyunlara uygulama hiçbir zaman dokunmaz. Ancak bu liste her oyunu kapsamayabilir. Türkçe yamayı çevrimiçi ya da çok oyunculu oyunlarda kullanmaktan doğabilecek hesap yasağı gibi sonuçların sorumluluğu sana aittir.
+- Hile koruması (anti-cheat) olan çevrimiçi oyunlara uygulama hiçbir zaman dokunmaz; Canlı Çeviri de bu oyunlarda çalışmaz. Ancak bu liste her oyunu kapsamayabilir. Çevrimiçi ya da çok oyunculu oyunlarda kullanmaktan doğabilecek hesap yasağı gibi sonuçların sorumluluğu sana aittir.
 
 ## 4. Telif hakları
 
@@ -28,17 +27,39 @@ Türkçesi Var'ı kurmadan ve kullanmadan önce lütfen bu koşulları oku. "Kab
 - "Türkçesi Var" adı ve logosu lisansa dahil değildir (MARKA.md).
 - Resmi sürümler yalnızca github.com/turkcesivar/turkcesi-var adresinden yayımlanır.
 
-## 5. Gizlilik
+## 5. Canlı Çeviri
 
-- Uygulama hesap istemez, kişisel bilgi toplamaz ve hiçbir yere göndermez.
-- İnternete yalnızca iki iş için bağlanır: yeni sürüm denetimi (GitHub) ve oyun görselleri (Steam). Görseller için Steam'e oyunun numarası, Epic Games oyunlarında oyunun adı gönderilir; başka bilgi gönderilmez.
-- Yedekler ve ayarlar yalnızca bilgisayarında tutulur (%APPDATA%\turkcesi-var).
+- **Nasıl çalışır:** Oyun penceresindeki yazıyı bilgisayarında, Windows'un kendi metin tanıma özelliğiyle okur. Okunan İngilizce metni Türkçesi Var çeviri sunucusuna (api.turkcesivar.com) gönderir; gelen Türkçeyi ekranda İngilizcenin üstünde gösterir. Oyunun dosyalarına ve belleğine dokunmaz, oyuna bir şey eklemez.
+- **Türkçe paketin yerine geçmez:** Türkçe paketi olan oyunlarda çalışmaz; o oyunlarda ücretsiz paketi kullanırsın.
+- **Kusursuz değildir:** Her yazı okunamayabilir (çok küçük, süslü, hareketli ya da resmin içindeki yazılar); yanlış okunan satırın çevirisi bozuk ya da anlamsız çıkabilir; bağlamı bilinmeyen kısa satırlar yanlış anlaşılabilir. Türkçe, İngilizceden genellikle 1-2 saniye sonra gelir. Çeviri kalitesi ve her oyunda çalışacağı garanti edilmez.
+- **Gerekenler:** İnternet bağlantısı, Windows'ta İngilizce dil paketi, pencereli tam ekran ve açık altyazılar.
+- **Deneme:** Her bilgisayara bir kez, 7 gün ve 2.000 yeni satır.
+- **Ücretli kullanım:** Kreosus (kreosus.com/turkcesivar) üzerinden destek olarak açılır:
+  - Aylık 75 ₺ — ayda 20.000 yeni satır, günde en çok 2.000.
+  - Aylık 200 ₺ — ayda 50.000 yeni satır, günde en çok 5.000.
+  - Tek seferlik 30 ₺ ek hak — geçerli ücretli lisansa +6.000 yeni satır.
+- **Hak nasıl sayılır:** Yalnızca daha önce hiç çevrilmemiş satırlar haktan düşer; daha önce çevrilmiş satırlar hakkı azaltmaz ve hakkın bitse bile görünmeye devam eder. Her aylık ödeme o günden başlayan 30 günlük yeni bir dönem açar ve hakkı kalanın üstüne ekler. Süre bitince canlı çeviri kapanır ve kalan hak sonraki döneme devretmez.
+- **Bilgisayar sayısı:** Bir lisans aynı anda en çok 2 bilgisayarda kullanılabilir.
+- **Ödeme ve iade:** Ödemeler Kreosus üzerinden yapılır; iade de Kreosus üzerinden yürür. İade edilen ödemenin verdiği hak geri alınır.
+- **Kötüye kullanım:** Lisansın başkalarıyla paylaşılması, otomatik araçlarla kullanılması ya da sistemi aşmaya çalışılması lisansın kapatılmasına yol açabilir.
+- **Değişiklikler:** Fiyatlar, haklar ve desteklenen oyunlar değişebilir; değişiklikler uygulamada ve Discord'da duyurulur. Ödemesi yapılmış dönemin hakkı değişmez. Hizmet bakım ya da arıza nedeniyle zaman zaman kesintiye uğrayabilir.
 
-## 6. Güncellemeler
+## 6. Gizlilik
+
+- Uygulama hesap istemez.
+- **İnternet bağlantıları:** Yeni sürüm denetimi (GitHub), oyun görselleri (Steam; Steam'e oyunun numarası, Epic Games oyunlarında oyunun adı gönderilir) ve yalnızca Canlı Çeviri'yi kullanırsan çeviri sunucusu.
+- **Canlı Çeviri'de gönderilenler:** Ekrandan okunan İngilizce metin satırları, oyunun numarası, lisans anahtarın ve bilgisayarının tek yönlü özeti (Windows'un makine kimliğinden türetilir, geri çözülemez). **Ekran görüntüsü gönderilmez;** görüntü yalnızca bilgisayarında okunur. Ekranda kişisel bir şey (ör. bir sohbet) varken F9 ile canlı çeviriyi duraklat.
+- **Çeviri servisi:** Daha önce çevrilmemiş satırlar çeviri için Anthropic'in yapay zekâ servisine gönderilir.
+- **Ortak bellek:** Çevrilen satırlar oyun başına ortak bir bellekte saklanır ve aynı oyunu oynayan herkese anında gösterilir. Bu satırlar oyun ekranındaki metindir.
+- **Kötüye kullanımı önlemek için** IP adresin ham hâliyle saklanmaz; yalnızca tek yönlü özeti, deneme ve istek sınırları için kısa süreli tutulur.
+- **Destek kaydı:** Kreosus'ta destek olursan Kreosus bize adını, e-posta adresini ve ödemenin tutarını bildirir (kart bilgin bize gelmez). Bunlar yalnızca lisansını yönetmek ve sana destek vermek için saklanır, kimseyle paylaşılmaz. Silinmesini istersen iletisim@turkcesivar.com adresine yaz.
+- Yedekler, ayarlar ve lisans anahtarın yalnızca bilgisayarında tutulur (%APPDATA%\turkcesi-var).
+
+## 7. Güncellemeler
 
 - Uygulama yeni sürüm çıkınca haber verir; sen "İndir" deyince indirir ve kurar. Yeni sürümler çeviri düzeltmeleri, yeni oyunlar ve hata düzeltmeleri getirir.
 - Bu koşullar değişirse yeni metin uygulamanın Hakkında sayfasında ve GitHub'da yayımlanır. Uygulamayı kullanmaya devam etmen yeni koşulları kabul ettiğin anlamına gelir.
 
-## 7. İletişim
+## 8. İletişim
 
-Sorun, öneri ve çeviri hataları için: github.com/turkcesivar/turkcesi-var/issues
+Sorun, öneri ve çeviri hataları için: github.com/turkcesivar/turkcesi-var/issues · Discord: discord.gg/nnNUCMUBJx · E-posta: iletisim@turkcesivar.com

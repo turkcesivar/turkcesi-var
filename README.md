@@ -88,6 +88,46 @@ Resimli anlatım: [Steam rehberi: Metro 2033 Redux'u tamamen Türkçe yapma](htt
 > Dosyanın resmi olduğundan emin olmak için sürüm notlarındaki SHA-256 özetini ve
 > VirusTotal sonucunu karşılaştır.
 
+## Canlı Çeviri (yeni)
+
+Türkçe paketi henüz olmayan bir oyunu beklemeden oynamak için: **Canlı Çeviri** ekrandaki İngilizce
+yazıyı okur, anında çevirtir ve Türkçesini İngilizcenin üstüne yazar. İsteğe bağlıdır; Türkçe paketler
+her zaman ücretsiz kalır.
+
+| | Türkçe paket (ücretsiz) | Canlı Çeviri |
+|---|---|---|
+| Nasıl | Oyunun kendi dosyaları baştan sona çevrilir | Ekrandaki yazı okunup anında çevrilir |
+| Görünüş | Oyunun kendi yazı tipiyle, yerli yerinde | İngilizcenin üstüne konan bir kutuda |
+| Kapsam | Her menü, her altyazı | Okunabilen yazılar (altyazılar, menüler) |
+| Hız | Anında | Yeni satırlar 1-2 saniye sonra; daha önce çevrilenler anında |
+| İnternet | Gerekmez | Gerekir |
+| Ücret | Ücretsiz | 7 gün ücretsiz deneme, sonra destekçilere açık |
+
+**Bilmen gerekenler**
+
+- Her şey çevrilmez: çok küçük, süslü, hareketli ya da resmin içine gömülü yazılar okunamayabilir.
+- Bazı çeviriler kusurlu olabilir: yazı yanlış okunursa çeviri de bozuk çıkabilir; bağlamı bilinmeyen
+  kısa satırlar yanlış anlaşılabilir.
+- Bir oyun ne kadar çok oynanırsa o kadar hızlanır: çevrilen satırlar ortak belleğe kaydedilir ve o oyunu
+  sonra oynayan herkese anında gelir.
+- Oyun pencereli tam ekranda, altyazılar açık olmalı; Windows'ta İngilizce dil paketi gerekir (uygulama
+  nasıl kurulacağını gösterir).
+- Türkçe paketi olan oyunlarda, hile korumalı ve çevrimiçi oyunlarda çalışmaz.
+
+**Ücretler** ([Kreosus](https://kreosus.com/turkcesivar) üzerinden, uygulamadaki *Destekçi ol* düğmesiyle):
+
+- 7 gün ücretsiz deneme: 2.000 yeni satır (her bilgisayara bir kez)
+- Aylık 75 ₺: ayda 20.000 yeni satır (günde en çok 2.000)
+- Aylık 200 ₺: ayda 50.000 yeni satır (günde en çok 5.000)
+- Tek seferlik 30 ₺ ek hak: +6.000 yeni satır
+
+Yalnızca daha önce hiç çevrilmemiş satırlar haktan düşer. Bir lisans en çok 2 bilgisayarda kullanılır.
+Destekler hem çeviri masrafını hem yeni ücretsiz Türkçe paketleri karşılar; çok oynanan oyunlar zamanla
+herkese ücretsiz pakete dönüşür.
+
+**Gizlilik:** Ekran görüntüsü gönderilmez; görüntü bilgisayarında okunur, yalnızca okunan İngilizce metin
+çeviri sunucusuna gider. Ayrıntılar [Kullanım Koşulları](KULLANIM-KOSULLARI.md)'nda.
+
 ## Güvenli mi?
 
 - **Yedek alır.** Kurmadan önce değişecek oyun dosyalarının orijinallerini
@@ -138,7 +178,8 @@ kalır; uygulamayı yeniden kurarsan oradan geri alabilirsin.)
 Uygulamayı açıp **Yenile**'ye bas; yedek yeni yerde de tanınır, Türkçeyi kaldırabilir ya da yeniden kurabilirsin.
 
 **Ücretli mi?**
-Hayır. Türkçesi Var ücretsizdir ve öyle kalacak. Katkı vermek istersen: [Destek ol](#-destek-ol).
+Türkçe paketler ücretsizdir ve öyle kalacak. Yalnızca isteğe bağlı [Canlı Çeviri](#canlı-çeviri-yeni)
+ücretlidir (7 gün ücretsiz denenir). Katkı vermek istersen: [Destek ol](#-destek-ol).
 
 ## Çeviri hatası bildir
 
