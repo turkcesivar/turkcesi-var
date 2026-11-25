@@ -49,6 +49,14 @@ kelimeler, düşük harf oranı) sunucuya gönderilmez (tanı olayı `bozuk_okum
 menü satırları sunucuya gitmeden önce bu bellekte aranır (sadeleştirilmiş tam eşleşme, yoksa üçlü harf dizininden
 seçilen ≤ 40 aday arasında ≥ 0,85 benzerlik; "AD: metin" önekli satırlar adsız da aranır). İnmezse çeviri sunucudan sürer.
 
+## Altyazı gösterimi
+
+Her gelen çeviri ana kutuda gösterilir; yeni İngilizce satır gelince önceki Türkçe, yenisi gelene kadar ekranda kalır
+(hiçbir Türkçe yokken "…" yer tutucu). Ekrandakinden daha eski bir satırın geç gelen çevirisi yok sayılır. Soluk
+"önceki satır" kutusu kullanılmaz (hızlı diyalogda karışıklık yaratıyordu; 25 Kasım kullanıcı geri bildirimi).
+Aynı satırın gürültülü okumaları (harf bazlı ≥ 0,80 benzerlik, kesik/yarım okuma, son 4 sn'lik okumalar) yeniden
+çevrilmez; yarım okunan satırın tamamı bir kez yeniden çevrilir. OCR satırları yukarıdan aşağı, soldan sağa birleştirilir.
+
 ## Tanı kaydı
 
 `--tani` (ya da `basla` komutunda `"tani": true`) verilirse her olay

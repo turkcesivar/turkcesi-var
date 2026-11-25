@@ -142,8 +142,14 @@ namespace Canli.Mantik
             _okumalar.Add(new Okuma { Metin = metin, Zaman = simdi, Satir = s });
             _son.Add(s);
             if (_son.Count > 20) _son.RemoveAt(0);
-            _ana = YerTutucu; _anaTurkce = false; _anaKutu = kutu;
-            _yerTutucuBitis = simdi + YerTutucuMs; _gizleZaman = 0;
+            // Ekranda bir Türkçe varsa yenisi gelene kadar kalır (hızlı diyalogda boş "…" yerine kesintisiz akış);
+            // yoksa yer tutucu gösterilir.
+            if (!(_anaTurkce && _ana != null))
+            {
+                _ana = YerTutucu; _anaTurkce = false; _anaKutu = kutu;
+                _yerTutucuBitis = simdi + YerTutucuMs;
+            }
+            _gizleZaman = 0;
             return Karar.YeniSatir(metin, kutu);
         }
 
@@ -183,17 +189,17 @@ namespace Canli.Mantik
             if (kaynak == null || simdi - kaynak.Zaman >= GecCeviriMs) return;
             kaynak.Tr = tr;
 
-            if (_gecerli != null) { _onceki = tr; _oncekiBitis = simdi + OncekiMs; }
-            else { AnaGoster(tr, kaynak.Kutu, simdi, kaynak); _gizleZaman = simdi + GecAnaMs; }
+            // Geç gelen çeviri de ana kutuda gösterilir (soluk "önceki" kutu kullanılmaz); ama ekrandakinden daha
+            // eski bir satırınsa yok sayılır (yazılar karışmasın).
+            if (_sonTrSatir != null && kaynak.Zaman < _sonTrSatir.Zaman) return;
+            AnaGoster(tr, kaynak.Kutu, simdi, kaynak);
+            if (_gecerli == null) _gizleZaman = simdi + GecAnaMs;
         }
 
         private void AnaGoster(string tr, Rectangle kutu, double simdi, Satir satir)
         {
-            // Aynı satırın yeni çevirisi (yarım okumanın tamamı) eskisinin yerine geçer; soluk "önceki"ye itilmez.
-            if (_sonTr != null && _sonTr != tr && _sonTrSatir != satir && simdi - _sonTrZaman < OncekiSayilirMs)
-            {
-                _onceki = _sonTr; _oncekiBitis = simdi + OncekiMs;
-            }
+            // Her yeni çeviri ana kutudakinin yerine geçer (kullanıcı geri bildirimi: soluk "önceki" kutu hızlı
+            // diyalogda karışıklık yaratıyordu).
             _ana = tr; _anaTurkce = true; _anaKutu = kutu;
             _sonTr = tr; _sonTrSatir = satir; _sonTrZaman = simdi; _gizleZaman = 0;
         }

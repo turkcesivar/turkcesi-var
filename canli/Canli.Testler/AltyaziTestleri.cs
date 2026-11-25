@@ -214,15 +214,30 @@ namespace Canli.Testler
         }
 
         [Fact]
-        public void gec_ceviri_onceki_kutuda()
+        public void gec_ceviri_ana_kutuda_gri_yok()
         {
+            // Hızlı diyalog: birinci satırın çevirisi ikinci satır başladıktan sonra geldi → yine ana kutuda.
             var d = Yeni();
             d.Okundu("First line of talk.", _kutu);
             _t = 1000; d.Okundu("Second line of talk.", _kutu);
             _t = 3000; d.CeviriGeldi("First line of talk.", "Birinci satir.");
-            var g = d.Simdi();
-            Assert.Equal("Birinci satir.", g.Onceki);
-            Assert.Equal("…", g.AnaMetin);
+            Assert.Equal("Birinci satir.", d.Simdi().AnaMetin);
+            Assert.Null(d.Simdi().Onceki);
+            _t = 3500; d.CeviriGeldi("Second line of talk.", "Ikinci satir.");
+            Assert.Equal("Ikinci satir.", d.Simdi().AnaMetin);
+            Assert.Null(d.Simdi().Onceki);
+        }
+
+        [Fact]
+        public void eski_satirin_cevirisi_yenisinden_sonra_gelirse_yok_sayilir()
+        {
+            var d = Yeni();
+            d.Okundu("First line of talk.", _kutu);
+            _t = 500; d.Okundu("Second line of talk.", _kutu);
+            _t = 1500; d.CeviriGeldi("Second line of talk.", "Ikinci satir.");
+            _t = 2000; d.CeviriGeldi("First line of talk.", "Birinci satir.");
+            Assert.Equal("Ikinci satir.", d.Simdi().AnaMetin);
+            Assert.Null(d.Simdi().Onceki);
         }
 
         [Fact]
@@ -249,17 +264,17 @@ namespace Canli.Testler
         }
 
         [Fact]
-        public void onceki_4sn_soluk()
+        public void yeni_satir_gelince_onceki_turkce_yenisi_gelene_kadar_kalir()
         {
             var d = Yeni();
             d.Okundu("First line of talk.", _kutu);
             _t = 200; d.CeviriGeldi("First line of talk.", "Birinci satir.");
             _t = 1000; d.Okundu("Second line of talk.", _kutu);
+            // Yer tutucu Türkçeyi silmez: ikinci çeviri gelene kadar birinci kalır.
+            Assert.Equal("Birinci satir.", d.Simdi().AnaMetin);
             _t = 1500; d.CeviriGeldi("Second line of talk.", "Ikinci satir.");
-            Assert.Equal("Birinci satir.", d.Simdi().Onceki);
             Assert.Equal("Ikinci satir.", d.Simdi().AnaMetin);
-            _t = 5499; Assert.Equal("Birinci satir.", d.Simdi().Onceki);
-            _t = 5501; Assert.Null(d.Simdi().Onceki);
+            Assert.Null(d.Simdi().Onceki);
         }
 
         [Fact]
