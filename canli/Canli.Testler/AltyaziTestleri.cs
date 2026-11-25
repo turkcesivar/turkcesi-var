@@ -214,9 +214,10 @@ namespace Canli.Testler
         }
 
         [Fact]
-        public void gec_ceviri_ana_kutuda_gri_yok()
+        public void gec_ceviri_ana_kutuda_bir_onceki_gri_kutuda()
         {
-            // Hızlı diyalog: birinci satırın çevirisi ikinci satır başladıktan sonra geldi → yine ana kutuda.
+            // Hızlı diyalog: birinci satırın çevirisi ikinci satır başladıktan sonra geldi → yine ana kutuda;
+            // ikincisi gelince birincisi okunabilsin diye gri kutuya geçer.
             var d = Yeni();
             d.Okundu("First line of talk.", _kutu);
             _t = 1000; d.Okundu("Second line of talk.", _kutu);
@@ -225,7 +226,9 @@ namespace Canli.Testler
             Assert.Null(d.Simdi().Onceki);
             _t = 3500; d.CeviriGeldi("Second line of talk.", "Ikinci satir.");
             Assert.Equal("Ikinci satir.", d.Simdi().AnaMetin);
-            Assert.Null(d.Simdi().Onceki);
+            Assert.Equal("Birinci satir.", d.Simdi().Onceki);
+            _t = 7499; Assert.Equal("Birinci satir.", d.Simdi().Onceki);
+            _t = 7501; Assert.Null(d.Simdi().Onceki);
         }
 
         [Fact]
@@ -274,7 +277,7 @@ namespace Canli.Testler
             Assert.Equal("Birinci satir.", d.Simdi().AnaMetin);
             _t = 1500; d.CeviriGeldi("Second line of talk.", "Ikinci satir.");
             Assert.Equal("Ikinci satir.", d.Simdi().AnaMetin);
-            Assert.Null(d.Simdi().Onceki);
+            Assert.Equal("Birinci satir.", d.Simdi().Onceki);
         }
 
         [Fact]

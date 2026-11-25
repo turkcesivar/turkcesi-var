@@ -198,8 +198,12 @@ namespace Canli.Mantik
 
         private void AnaGoster(string tr, Rectangle kutu, double simdi, Satir satir)
         {
-            // Her yeni çeviri ana kutudakinin yerine geçer (kullanıcı geri bildirimi: soluk "önceki" kutu hızlı
-            // diyalogda karışıklık yaratıyordu).
+            // En yeni çeviri ana kutuda; bir önceki (başka satırın) çevirisi hızlı diyalogda okunabilsin diye
+            // 4 sn soluk kutuda kalır.
+            if (_sonTr != null && _sonTr != tr && _sonTrSatir != satir && simdi - _sonTrZaman < OncekiSayilirMs)
+            {
+                _onceki = _sonTr; _oncekiBitis = simdi + OncekiMs;
+            }
             _ana = tr; _anaTurkce = true; _anaKutu = kutu;
             _sonTr = tr; _sonTrSatir = satir; _sonTrZaman = simdi; _gizleZaman = 0;
         }

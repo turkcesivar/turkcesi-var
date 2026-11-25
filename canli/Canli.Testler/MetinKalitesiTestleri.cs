@@ -27,6 +27,8 @@ namespace Canli.Testler
         [InlineData("See all the destruction? And Moscow had the best anti-air defenses in the country!")]
         [InlineData("Wave 2 of 4")]
         [InlineData("We have t0 go now, Enz0.")]
+        [InlineData("ANNA: NO! A-a-a-a! Artyom!!!")]
+        [InlineData("OFFICER: Base, patrol 72 here. Picked up two more individuals at the railroad bridge.")]
         [InlineData("for us!\"")]
         public void temiz_okuma_gonderilir(string metin)
         {
