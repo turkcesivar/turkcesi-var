@@ -91,6 +91,6 @@ export const DIL_ADIMLAR = [
 ] as const;
 export const DIL_WIN10 = "Windows 10'da yol: Ayarlar → Saat ve dil → Dil → \"Tercih edilen dil ekle\".";
 export const DIL_GELISMIS =
-  "Olmazsa: Başlat menüsünde PowerShell'e sağ tıkla → \"Yönetici olarak çalıştır\", aşağıdaki komutu yapıştırıp Enter'a bas, bitince \"Yeniden denetle\"ye bas.";
+  "Olmazsa: Başlat menüsünde PowerShell'e sağ tıkla → \"Yönetici olarak çalıştır\", aşağıdaki komutu yapıştırıp Enter'a bas (internet bağlantısı gerekir; Windows Update'ten indirir, birkaç dakika sürebilir). Bitince \"Yeniden denetle\"ye bas.";
 export const DIL_KOMUTU = 'Add-WindowsCapability -Online -Name "Language.OCR~~~en-US~0.0.1.0"';
 export const DIL_GEREKLI_IPUCU = "Önce İngilizce dil paketini kur (yukarıdaki adımlar).";

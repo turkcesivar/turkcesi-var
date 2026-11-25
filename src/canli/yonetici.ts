@@ -70,6 +70,8 @@ export class CanliYonetici {
   /** canli.exe'nin bildirdiği son ön plan yolu (oturum bitince yeniden değerlendirmek için). */
   private sonYol: string | null = null;
   private degerlendirmeSayaci: unknown = null;
+  /** Süren dilDenetle() (eşzamanlı çağrılar aynı sözü alır). */
+  private dilDenetleniyor: Promise<void> | null = null;
   /** Süren yenile() (eşzamanlı çağrılar aynı sözü alır). */
   private yenileniyor: Promise<void> | null = null;
   /** kapat() sonrası hiçbir zamanlayıcı ya da süreç başlatılmaz. */
@@ -199,9 +201,20 @@ export class CanliYonetici {
     this.eslesmeYaz(null);
   }
 
-  /** Lisans durumunu sunucudan yeniler; süren bir yenileme varsa onun sözünü döndürür. */
-  /** İngilizce metin tanımayı denetler; sonuç anlaşılamazsa önceki bilgi korunur. */
-  async dilDenetle(): Promise<void> {
+  /**
+   * İngilizce metin tanımayı denetler; sonuç anlaşılamazsa önceki bilgi korunur.
+   * Süren bir denetim varsa onun sözünü döndürür (aynı anda iki canli.exe açılmaz).
+   */
+  dilDenetle(): Promise<void> {
+    if (this.dilDenetleniyor) return this.dilDenetleniyor;
+    const p = this.dilDenetleIc().finally(() => {
+      if (this.dilDenetleniyor === p) this.dilDenetleniyor = null;
+    });
+    this.dilDenetleniyor = p;
+    return p;
+  }
+
+  private async dilDenetleIc(): Promise<void> {
     if (this.kapandi || !this.o.ocrDenetle) return;
     let sonuc: boolean | null = null;
     try {
@@ -211,9 +224,12 @@ export class CanliYonetici {
     }
     if (this.kapandi || sonuc === null) return;
     this.d.ocrHazir = sonuc;
+    // Dil paketi kurulduysa eski "ocr_dil_yok" hatası ekranda kalmasın.
+    if (sonuc && this.d.hata === "ocr_dil_yok") delete this.d.hata;
     this.yay();
   }
 
+  /** Lisans durumunu sunucudan yeniler; süren bir yenileme varsa onun sözünü döndürür. */
   yenile(): Promise<void> {
     if (this.yenileniyor) return this.yenileniyor;
     const p = this.yenileIc().finally(() => {

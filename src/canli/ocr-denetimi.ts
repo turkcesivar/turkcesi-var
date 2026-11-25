@@ -5,6 +5,7 @@ import type { CanliSurec, Zaman } from "./yonetici.js";
 
 /** "hazir"dan sonra hata gelmesi için beklenen süre. */
 export const HAZIR_SONRASI_MS = 800;
+const HAZIR = /"olay"\s*:\s*"hazir"/;
 /** Hiç yanıt gelmezse vazgeçme süresi. */
 export const DENETIM_SURESI_MS = 5000;
 
@@ -40,7 +41,7 @@ export function ocrDenetle(baslat: () => CanliSurec, zaman: Zaman = globalThis a
     surec.satirlar((parca) => {
       tampon += parca;
       if (tampon.includes('"ocr_dil_yok"')) return bitir(false);
-      if (hazirSayaci === null && tampon.includes('"olay":"hazir"')) {
+      if (hazirSayaci === null && HAZIR.test(tampon)) {
         hazirSayaci = zaman.setTimeout?.(() => bitir(true), HAZIR_SONRASI_MS) ?? null;
       }
     });

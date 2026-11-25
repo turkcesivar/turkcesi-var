@@ -37,6 +37,14 @@ describe("ocrDenetle", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("bosluklu_hazir_satiri_da_taninir", async () => {
+    const s = sahteSurec();
+    const p = ocrDenetle(() => s);
+    s.gonder('{"olay": "hazir"}\n');
+    await vi.advanceTimersByTimeAsync(HAZIR_SONRASI_MS + 10);
+    expect(await p).toBe(true);
+  });
+
   it("ocr_dil_yok_gelirse_yuklu_degil", async () => {
     const s = sahteSurec();
     const p = ocrDenetle(() => s);

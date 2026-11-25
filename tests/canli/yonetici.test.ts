@@ -143,6 +143,31 @@ describe("CanliYonetici", () => {
     expect(k.y.durum().hata).toBe("ocr_dil_yok");
   });
 
+  it("dil_paketi_kurulunca_eski_ocr_hatasi_kalkar", async () => {
+    let sonuc = true;
+    const k = kur({ ocr: async () => sonuc });
+    await k.y.yenile();
+    k.y.calistir();
+    k.surec.olay({ olay: "hata", kod: "ocr_dil_yok" });
+    expect(k.y.durum().hata).toBe("ocr_dil_yok");
+    sonuc = true;
+    await k.y.dilDenetle();
+    expect(k.y.durum().ocrHazir).toBe(true);
+    expect(k.y.durum().hata).toBeUndefined();
+  });
+
+  it("dil_denetimi_ayni_anda_tek_surec", async () => {
+    let coz: (v: boolean) => void = () => {};
+    const ocr = vi.fn(() => new Promise<boolean>((r) => (coz = r)));
+    const k = kur({ ocr });
+    const a = k.y.dilDenetle();
+    const b = k.y.dilDenetle();
+    expect(b).toBe(a);
+    coz(true);
+    await a;
+    expect(ocr).toHaveBeenCalledTimes(1);
+  });
+
   it("dil_denetimi_kapattiktan_sonra_yazmaz", async () => {
     let coz: (v: boolean) => void = () => {};
     const k = kur({ ocr: () => new Promise<boolean>((r) => (coz = r)) });
