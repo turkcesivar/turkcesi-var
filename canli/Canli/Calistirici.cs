@@ -57,6 +57,7 @@ namespace Canli
         private Profil _profil;
         private RenkKipi _kip;
         private bool _basladi, _duraklat, _arkada;
+        private int _cizimHatasi;
         private bool _sonSuzulmusBos;   // son süzülmüş altyazı okuması boştu (teşhis: suzgecte_kayip)
         private Rectangle _ekran, _bolge;
         private long _sonImza;
@@ -285,11 +286,20 @@ namespace Canli
             {
                 var g = _durum.Simdi();
                 bool anaDegisti = !_cizildi || g.AnaMetin != _cizilenAna || g.AnaKutu != _cizilenKutu;
-                if (anaDegisti) _kaplama.AnaGoster(g.AnaMetin, g.AnaKutu);
+                if (anaDegisti)
+                {
+                    _kaplama.AnaGoster(g.AnaMetin, g.AnaKutu);
+                    if (g.AnaMetin != _cizilenAna)
+                        _tani.Yaz("gosterim", ("tr", g.AnaMetin), ("kutu", g.AnaKutu.IsEmpty ? null : g.AnaKutu.X + "," + g.AnaKutu.Y + "," + g.AnaKutu.Width + "," + g.AnaKutu.Height));
+                }
                 if (anaDegisti || g.Onceki != _cizilenOnceki) _kaplama.OncekiGoster(g.Onceki);
                 _cizilenAna = g.AnaMetin; _cizilenKutu = g.AnaKutu; _cizilenOnceki = g.Onceki; _cizildi = true;
             }
-            catch (Exception) { }
+            catch (Exception e)
+            {
+                // Çizim hatası sessiz kalmasın (her 30 ms tekrarlanır: yalnız ilk 5'i yazılır).
+                if (_cizimHatasi++ < 5) _tani.Yaz("cizim_hatasi", ("hata", e.GetType().Name + ": " + e.Message));
+            }
         }
 
         /// <summary>1 sn: ek bölgeler (menü açıkken okunmaz).</summary>
