@@ -38,8 +38,8 @@ yazı kutularında zemin (kutu kenarı) renginden uzak, ince çizgilerde yoğunl
 rengi sayılır (gölge/çerçeve elenir). Aynı renk 3 kez gelince öğrenilir; en çok 5 renk (ör. beyaz ipucu + konuşmacıya göre değişen renkler). Öğrenilen renkler oyun başına `%LOCALAPPDATA%\TurkcesiVar\canli\bellek\renk-*.txt` dosyasına yazılır ve
 sonraki açılışta hemen kullanılır. Yalnız ince çizgi üstündeki pikseller tutulur: yatay ve dikey eşleşme
 dizilerinden kısası yazı kalınlığını aşan piksel (kar, gökyüzü gibi geniş leke) atılır; böylece aynı karede açık gri
-konuşmacı adı tutulur, aynı renkteki kar atılır. Bozuk okumalar (� işareti, tuhaf simgeler, harf-rakam karışık
-kelimeler, düşük harf oranı) sunucuya gönderilmez (tanı olayı `bozuk_okuma`). Öğrenene kadar sabit süzgeç (beyaz, sarı, turuncu) çalışır. Profil `beyaz`,
+konuşmacı adı tutulur, aynı renkteki kar atılır. Yalnız açıkça çöp okumalar sunucuya gönderilmez (kelimelerin %60'ından azı düzgünse ya da
+� işareti harflerin %5'ini aşıyorsa; tanı olayı `bozuk_okuma`); tek tük bozuk karakterli satırları model düzeltir. Öğrenene kadar sabit süzgeç (beyaz, sarı, turuncu) çalışır. Profil `beyaz`,
 `sari` ya da `turuncu` derse yalnız o renk kullanılır. Tanı olayı: `renk` (`kaynak` = disk/algilandi, `renkler`).
 
 ## Önceden indirilen bellek

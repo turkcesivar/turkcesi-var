@@ -1,31 +1,51 @@
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Canli.Mantik
 {
     /// <summary>
-    /// OCR okuması sunucuya gönderilecek kadar temiz mi? Altyazı belirirken/kaybolurken gelen bozuk okumalar
-    /// (Metro Exodus tanı kaydında satırların yarısından fazlası) gönderilmez; bir sonraki temiz okuma beklenir.
+    /// OCR okuması sunucuya gönderilecek kadar okunur mu? Yalnız açıkça çöp okumalar durdurulur; tek tük bozuk
+    /// karakterli ama çoğu okunur satırlar gönderilir (model OCR hatalarını anlamdan düzeltir). Kelime bazlı karar:
+    /// kelimelerin en az %60'ı düzgün olmalı; "�" harflerin %5'inden fazlaysa okuma çöptür.
     /// </summary>
     public static class MetinKalitesi
     {
-        private const string TuhafIsaretler = "*$%&^|\\~<>{}[]@#_=+";
         private const string OlaganNoktalama = ".,!?'\"-:;()…’‘“”";
-        // 0 ve 1 harfe bitişik olabilir (OCR o/l karışıklığı: "Enz0", "t0"); diğer rakamlar bozulmadır ("ms4JC").
-        private static readonly Regex HarfRakamKarisik = new Regex(@"\p{L}[2-9]|[2-9]\p{L}", RegexOptions.Compiled);
+        private const string Unluler = "aeiouyAEIOUYıİöÖüÜ";
+        private const double DuzgunOrani = 0.6;
+        private const double EnCokBozukKarakter = 0.05;
 
         public static bool Yeterli(string metin)
         {
             if (string.IsNullOrWhiteSpace(metin)) return false;
-            if (metin.IndexOf('�') >= 0) return false;
-            if (metin.Any(c => TuhafIsaretler.IndexOf(c) >= 0)) return false;
-            // "ms4JC" gibi harf-rakam karışık kelimeler OCR bozulmasıdır.
-            if (HarfRakamKarisik.IsMatch(metin)) return false;
-            // Olağan noktalama ("NO! A-a-a-a! Artyom!!!") orana katılmaz; geriye kalan tuhaf karakterler sayılır.
-            var dolu = metin.Where(c => !char.IsWhiteSpace(c) && OlaganNoktalama.IndexOf(c) < 0).ToList();
-            int harf = dolu.Count(char.IsLetter), rakam = dolu.Count(char.IsDigit);
+            int harf = metin.Count(char.IsLetter);
             if (harf < 2) return false;
-            return (double)(harf + rakam) / dolu.Count >= 0.7;
+            if ((double)metin.Count(c => c == '�') / harf > EnCokBozukKarakter) return false;
+
+            int toplam = 0, duzgun = 0;
+            foreach (var parca in metin.Split((char[])null, System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                string k = parca.Trim(OlaganNoktalama.ToCharArray());
+                if (k.Length < 2) continue;
+                toplam++;
+                if (Duzgun(k)) duzgun++;
+            }
+            // Kısa ünlemler ("Hmm...", "Shh!") her zaman gönderilir.
+            if (toplam <= 2) return true;
+            return (double)duzgun / toplam >= DuzgunOrani;
+        }
+
+        /// <summary>Sayı ya da (harf, kelime içi tire/kesme, OCR'ın o/l yerine okuduğu 0/1) en az bir ünlü içeren kelime.</summary>
+        private static bool Duzgun(string k)
+        {
+            if (k.All(char.IsDigit)) return true;
+            bool harfVar = false, unluVar = false;
+            foreach (char c in k)
+            {
+                if (char.IsLetter(c)) { harfVar = true; if (Unluler.IndexOf(c) >= 0) unluVar = true; continue; }
+                if (c == '-' || c == '\'' || c == '’' || c == '0' || c == '1') continue;
+                return false;
+            }
+            return harfVar && unluVar;
         }
     }
 }
