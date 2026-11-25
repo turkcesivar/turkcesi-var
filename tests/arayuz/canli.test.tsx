@@ -16,6 +16,7 @@ function kur(d: CanliDurum, ek: Record<string, unknown> = {}) {
     canliYenile: vi.fn(() => Promise.resolve()),
     canliDeneme: vi.fn(() => Promise.resolve({})),
     canliEslestir: vi.fn(() => Promise.resolve({})),
+    canliCihazEkle: vi.fn(() => Promise.resolve({})),
     canliBaslat: vi.fn(() => Promise.resolve()),
     canliDurdur: vi.fn(() => Promise.resolve()),
     canliDilDenetle: vi.fn(() => Promise.resolve()),
@@ -269,5 +270,29 @@ describe("Canlı Çeviri sayfası", () => {
     const metin = (container.textContent ?? "").toLocaleLowerCase("tr");
     expect(metin).not.toContain("bellek");
     expect(metin).not.toContain("ücretsiz satır");
+  });
+  it("destekci_baska_bilgisayar_ekler_deneme_goremez", async () => {
+    const tv = kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 50 } });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    const giris = await screen.findByLabelText("Diğer bilgisayarın eşleştirme numarası");
+    fireEvent.change(giris, { target: { value: " tv-7k2m " } });
+    fireEvent.click(screen.getByRole("button", { name: /Bilgisayarı ekle/ }));
+    await waitFor(() => expect(tv.canliCihazEkle).toHaveBeenCalledWith("TV-7K2M"));
+    expect(await screen.findByText(/birkaç saniye içinde/)).toBeTruthy();
+    cleanup();
+    kur({ ...taban, lisans: { durum: "etkin", tur: "deneme", kalan: 100 } });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    await screen.findByRole("heading", { name: /Deneme/ });
+    expect(screen.queryByLabelText("Diğer bilgisayarın eşleştirme numarası")).toBeNull();
+  });
+
+  it("cihaz_ekle_hatasi_gosterilir", async () => {
+    kur({ ...taban, lisans: { durum: "etkin", tur: "ust", kalan: 100, gunKalan: 50 } }, {
+      canliCihazEkle: vi.fn(() => Promise.resolve({ hata: "numara_yok" })),
+    });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    fireEvent.change(await screen.findByLabelText("Diğer bilgisayarın eşleştirme numarası"), { target: { value: "TV-ABCD" } });
+    fireEvent.click(screen.getByRole("button", { name: /Bilgisayarı ekle/ }));
+    expect(await screen.findByText(kodMetni("numara_yok"))).toBeTruthy();
   });
 });

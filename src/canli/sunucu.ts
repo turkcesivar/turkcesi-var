@@ -35,13 +35,24 @@ export class CanliSunucu {
     return this.istek("POST", "/eslestir", null);
   }
 
-  private async istek<T>(yontem: string, yol: string, lisans: string | null): Promise<SunucuSonucu<T>> {
+  /** Lisanslı bu bilgisayar, başka bilgisayarın eşleştirme numarasını aynı lisansa bağlar. */
+  cihazEkle(lisans: string, numara: string): Promise<SunucuSonucu<{ tamam: boolean }>> {
+    return this.istek("POST", "/cihaz-ekle", lisans, { numara });
+  }
+
+  private async istek<T>(yontem: string, yol: string, lisans: string | null, govdeVerisi?: unknown): Promise<SunucuSonucu<T>> {
     const basliklar: Record<string, string> = { "X-Cihaz": this.cihaz };
     if (lisans) basliklar["Authorization"] = `Bearer ${lisans}`;
+    if (govdeVerisi !== undefined) basliklar["content-type"] = "application/json";
     const durdur = new AbortController();
     const sayac = setTimeout(() => durdur.abort(), this.zamanAsimiMs);
     try {
-      const yanit = await this.getir(this.taban + yol, { method: yontem, headers: basliklar, signal: durdur.signal });
+      const yanit = await this.getir(this.taban + yol, {
+        method: yontem,
+        headers: basliklar,
+        signal: durdur.signal,
+        ...(govdeVerisi !== undefined ? { body: JSON.stringify(govdeVerisi) } : {}),
+      });
       let govde: unknown;
       try {
         govde = await yanit.json();

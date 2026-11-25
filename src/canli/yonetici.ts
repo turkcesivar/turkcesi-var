@@ -299,6 +299,14 @@ export class CanliYonetici {
     return {};
   }
 
+  /** Başka bilgisayarın eşleştirme numarasını bu bilgisayarın lisansına bağlar (yalnız ücretli lisans; sunucu denetler). */
+  async cihazEkle(numara: string): Promise<{ hata?: string }> {
+    const lisans = this.lisansOku();
+    if (!lisans) return { hata: "lisans_yok" };
+    const r = await this.o.sunucu.cihazEkle(lisans, numara);
+    return r.tamam ? {} : { hata: r.hata };
+  }
+
   private eslesmeYoklamasiBaslat(): void {
     if (this.kapandi || this.eslesmeYoklama !== null) return;
     this.eslesmeYoklama = this.aralik(() => void this.eslesmeYokla(), YOKLAMA_MS);

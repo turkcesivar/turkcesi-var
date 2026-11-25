@@ -50,6 +50,7 @@ const tv: TvApi = {
   canliYenile: () => ipcRenderer.invoke("tv:canliYenile"),
   canliDeneme: () => ipcRenderer.invoke("tv:canliDeneme"),
   canliEslestir: () => ipcRenderer.invoke("tv:canliEslestir"),
+  canliCihazEkle: (numara: string) => ipcRenderer.invoke("tv:canliCihazEkle", numara),
   canliBaslat: () => ipcRenderer.invoke("tv:canliBaslat"),
   canliDurdur: () => ipcRenderer.invoke("tv:canliDurdur"),
   canliDilDenetle: () => ipcRenderer.invoke("tv:canliDilDenetle"),

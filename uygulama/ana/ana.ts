@@ -289,6 +289,12 @@ function ipcKur() {
   ipcMain.handle("tv:canliYenile", async () => (await canliHazir()).yenile());
   ipcMain.handle("tv:canliDeneme", async () => (await canliHazir()).deneme());
   ipcMain.handle("tv:canliEslestir", async () => (await canliHazir()).eslestirBaslat());
+  ipcMain.handle("tv:canliCihazEkle", async (_e, numara: unknown) => {
+    // Arayüzden gelen değer denetlenir: yalnız TV-XXXX biçimi sunucuya gider.
+    const n = typeof numara === "string" ? numara.trim().toUpperCase() : "";
+    if (!/^TV-[A-Z0-9]{4}$/.test(n)) return { hata: "gecersiz" };
+    return (await canliHazir()).cihazEkle(n);
+  });
   ipcMain.handle("tv:canliBaslat", async () => (await canliHazir()).calistir());
   ipcMain.handle("tv:canliDurdur", async () => (await canliHazir()).durdur());
   ipcMain.handle("tv:canliDilDenetle", async () => (await canliHazir()).dilDenetle());

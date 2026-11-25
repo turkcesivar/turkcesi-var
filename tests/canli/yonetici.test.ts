@@ -66,6 +66,7 @@ function sahteSunucu(durum: (lisans: string | null, numara?: string) => DurumYan
       tamam: true,
       veri: { numara: "123456", bitis: Date.now() + 3600_000 },
     })),
+    cihazEkle: vi.fn(async (_l: string, _n: string): Promise<SunucuSonucu<{ tamam: boolean }>> => ({ tamam: true, veri: { tamam: true } })),
   };
 }
 
@@ -113,6 +114,17 @@ afterEach(() => {
 });
 
 describe("CanliYonetici", () => {
+  it("cihaz_ekle_kayitli_lisansla_sunucuya_gider", async () => {
+    const { y, depo, sunucu } = kur();
+    depo.lisans = null;
+    expect(await y.cihazEkle("TV-7K2M")).toEqual({ hata: "lisans_yok" });
+    depo.lisans = "LIS";
+    expect(await y.cihazEkle("TV-7K2M")).toEqual({});
+    expect(sunucu.cihazEkle).toHaveBeenCalledWith("LIS", "TV-7K2M");
+    sunucu.cihazEkle.mockResolvedValueOnce({ tamam: false, hata: "numara_bagli" });
+    expect(await y.cihazEkle("TV-7K2M")).toEqual({ hata: "numara_bagli" });
+  });
+
   it("dil_denetimi_sonucu_duruma_yazilir", async () => {
     const yok = kur({ ocr: async () => false });
     expect(yok.y.durum().ocrHazir).toBeUndefined();

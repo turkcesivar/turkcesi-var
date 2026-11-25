@@ -7,7 +7,7 @@ import { Bildirim, Dugme, Iskelet, sayi } from "../bilesenler/temel.js";
 import { useYumusakKapat } from "../bilesenler/yumusak.js";
 import {
   DENEME_DAVETI, DENEME_KARTI, DIL_ACIKLAMA, DIL_ADIMLAR, DIL_BASLIK, DIL_GELISMIS, DIL_GEREKLI_IPUCU, DIL_KOMUTU, DIL_WIN10,
-  ESLESTIRME_ACIKLAMA_SON, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
+  CIHAZ_EKLE_ACIKLAMA, CIHAZ_EKLENDI, ESLESTIRME_ACIKLAMA_SON, ESLESTIRME_BASKA_BILGISAYAR, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
   SINIRLAR, SINIRLAR_BASLIK, SURE_BITTI, durumSatiri, hileEngel, kodMetni, paketliEngel,
 } from "../canli-metinler.js";
 import { DESTEK_ADRESI, DISCORD_ADRESI } from "../sabitler.js";
@@ -140,6 +140,58 @@ function Cubuk({ etiket, kalan, tavan }: { etiket: string; kalan: number; tavan:
         <div className="ilerleme-dolgu" style={{ width: `${yuzde}%` }} />
       </div>
     </div>
+  );
+}
+
+/** Ücretli lisansta: başka bilgisayarın eşleştirme numarasını bu lisansa bağlar. */
+function BaskaBilgisayar() {
+  const [numara, setNumara] = useState("");
+  const [sonuc, setSonuc] = useState<{ tamam?: boolean; hata?: string }>();
+  const [gonderiliyor, setGonderiliyor] = useState(false);
+  const ekle = async () => {
+    setGonderiliyor(true);
+    setSonuc(undefined);
+    try {
+      const r = await window.tv.canliCihazEkle(numara.trim().toUpperCase());
+      setSonuc(r.hata ? { hata: r.hata } : { tamam: true });
+      if (!r.hata) setNumara("");
+    } catch {
+      setSonuc({ hata: "cevrimdisi" });
+    } finally {
+      setGonderiliyor(false);
+    }
+  };
+  return (
+    <section className="panel" aria-label="Başka bilgisayar">
+      <h2 className="panel-baslik">
+        <Simge ad="canli" /> Başka bilgisayar ekle
+      </h2>
+      <p className="soluk">{CIHAZ_EKLE_ACIKLAMA}</p>
+      <form
+        className="canli-cihaz-ekle"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void ekle();
+        }}
+      >
+        <input
+          aria-label="Diğer bilgisayarın eşleştirme numarası"
+          placeholder="TV-XXXX"
+          maxLength={12}
+          value={numara}
+          onChange={(e) => setNumara(e.target.value)}
+        />
+        <Dugme tur="ikincil" pasif={gonderiliyor || numara.trim().length < 7} onClick={() => void ekle()}>
+          Bilgisayarı ekle
+        </Dugme>
+      </form>
+      {sonuc?.tamam && <Bildirim tur="bilgi">{CIHAZ_EKLENDI}</Bildirim>}
+      {sonuc?.hata && (
+        <Bildirim tur="uyari">
+          <p>{kodMetni(sonuc.hata)}</p>
+        </Bildirim>
+      )}
+    </section>
   );
 }
 
@@ -303,6 +355,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
                 <p>
                   Eşleştirme numaran: <strong className="canli-numara">{d.eslesme.numara}</strong> — Kreosus&apos;ta destek olurken bu numarayı mesaj kısmına yaz. {ESLESTIRME_ACIKLAMA_SON}
                 </p>
+                <p className="soluk">{ESLESTIRME_BASKA_BILGISAYAR}</p>
                 <div className="eylemler">
                   <Dugme tur="ana" simge="kalp" onClick={() => ac(DESTEK_ADRESI)}>
                     Kreosus&apos;u aç
@@ -424,6 +477,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             </div>
           </Bildirim>
         )}
+        {tur !== "deneme" && <BaskaBilgisayar />}
         <Nasil katli />
       </>
     );

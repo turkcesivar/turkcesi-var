@@ -84,6 +84,24 @@ describe("CanliSunucu", () => {
     expect(await s.eslestir()).toEqual({ tamam: true, veri: { numara: "7K2M", bitis: 123 } });
   });
 
+  it("cihaz_ekle_bearer_ve_govdeyle_post", async () => {
+    const { f, cagrilar } = sahte(async () => yanit(200, { tamam: true }));
+    const s = new CanliSunucu({ taban: TABAN, cihaz: "C1", fetch: f });
+    expect(await s.cihazEkle("LIS", "TV-7K2M")).toEqual({ tamam: true, veri: { tamam: true } });
+    expect(cagrilar[0]!.url).toBe(`${TABAN}/cihaz-ekle`);
+    expect(cagrilar[0]!.init.method).toBe("POST");
+    const h = cagrilar[0]!.init.headers as Record<string, string>;
+    expect(h["Authorization"]).toBe("Bearer LIS");
+    expect(h["content-type"]).toBe("application/json");
+    expect(JSON.parse(String(cagrilar[0]!.init.body))).toEqual({ numara: "TV-7K2M" });
+  });
+
+  it("cihaz_ekle_hata_kodu", async () => {
+    const { f } = sahte(async () => yanit(409, { hata: "numara_bagli" }));
+    const s = new CanliSunucu({ taban: TABAN, cihaz: "C1", fetch: f });
+    expect(await s.cihazEkle("LIS", "TV-7K2M")).toEqual({ tamam: false, hata: "numara_bagli" });
+  });
+
   it("bozuk_yanit_gecici_hata", async () => {
     const { f } = sahte(async () => new Response("<html>", { status: 502 }));
     const s = new CanliSunucu({ taban: TABAN, cihaz: "C1", fetch: f });

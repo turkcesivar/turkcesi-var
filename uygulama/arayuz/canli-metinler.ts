@@ -63,6 +63,11 @@ const KODLAR: Record<string, string> = {
   deneme_kullanildi: "Bu bilgisayarda deneme daha önce kullanılmış.",
   deneme_siniri: "Bugün bu bağlantıdan çok fazla deneme başlatıldı; yarın yeniden dene.",
   cihaz: "Bu bilgisayarın kimliği okunamadı; canlı çeviri şu an kullanılamıyor.",
+  gecersiz: "Numara TV-XXXX biçiminde olmalı (diğer bilgisayardaki Canlı Çeviri sayfasında yazar).",
+  numara_yok: "Bu numara bulunamadı ya da süresi dolmuş. Diğer bilgisayarda \"Destek ol ve etkinleştir\"e basıp yeni numara al.",
+  numara_bagli: "Bu numara zaten bir lisansa bağlı; diğer bilgisayarda Canlı Çeviri birkaç saniye içinde açılır.",
+  deneme: "Deneme lisansı başka bilgisayara eklenemez; bu yalnız destekçilere açık.",
+  suresi_bitti: "Lisansının süresi bittiği için başka bilgisayar eklenemiyor.",
   kayit: "Lisans bu bilgisayara kaydedilemedi. Lütfen Discord'dan bize yaz; lisansını elle bağlayalım.",
 };
 
@@ -77,6 +82,11 @@ export const hileEngel = (oyunAdi: string) => `${oyunAdi} hile korumalı olduğu
 export const DENEME_KARTI = "Deneme başladı: 7 gün, 2.000 yeni satır. Sorun, öneri ve yeni oyunlar için Discord'a katıl.";
 export const DENEME_DAVETI = "Sorun, öneri ve yeni oyunlar için Discord'a katıl.";
 export const ESLESTIRME_ACIKLAMA_SON = "Ödemen gelince canlı çeviri bu bilgisayarda kendiliğinden açılır.";
+export const ESLESTIRME_BASKA_BILGISAYAR =
+  "Başka bir bilgisayarda zaten destekçiysen ödeme yapma: o bilgisayarda Canlı Çeviri → \"Başka bilgisayar ekle\" kısmına bu numarayı yaz.";
+export const CIHAZ_EKLE_ACIKLAMA =
+  "Lisansını başka bir bilgisayarında da kullanmak için: o bilgisayarda Canlı Çeviri sayfasında \"Destek ol ve etkinleştir\"e bas, çıkan TV- numarasını buraya yaz. Aynı anda en çok 2 bilgisayar; üçüncüsü bağlanınca en uzun süredir kullanılmayan düşer.";
+export const CIHAZ_EKLENDI = "Eklendi. Diğer bilgisayarda Canlı Çeviri birkaç saniye içinde kendiliğinden açılır.";
 
 // ---- İngilizce dil paketi (Windows metin tanıma) ----
 

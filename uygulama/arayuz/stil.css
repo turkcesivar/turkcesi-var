@@ -1795,6 +1795,29 @@ h3 {
 .canli-durum {
   margin: 0;
 }
+.canli-cihaz-ekle {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 8px 0;
+}
+.canli-cihaz-ekle input {
+  width: 140px;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--yuzey);
+  border: 1px solid var(--cizgi);
+  border-radius: 8px;
+  color: var(--metin);
+  font: inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.canli-cihaz-ekle input:focus {
+  border-color: var(--vurgu);
+  outline: 0;
+}
 .canli-numara {
   font-size: 22px;
   letter-spacing: 0.1em;
