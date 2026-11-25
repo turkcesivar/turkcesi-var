@@ -345,4 +345,15 @@ describe("Canlı Çeviri sayfası", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Ek hak al · 30/ }));
     await waitFor(() => expect(tv.canliDestekOl).toHaveBeenCalledWith("ek"));
   });
+  it("lisansli_ekranda_destekci_kodu_gorunur_ve_kopyalanir", async () => {
+    const yaz = vi.fn(() => Promise.resolve());
+    Object.assign(navigator, { clipboard: { writeText: yaz } });
+    kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 50, kod: "1A2B-3C4D" } });
+    render(<CanliCeviri onOyunaGit={() => {}} />);
+    expect(await screen.findByText("1A2B-3C4D")).toBeTruthy();
+    expect(screen.getByText(/Destekçi kodun/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Kopyala" }));
+    await waitFor(() => expect(yaz).toHaveBeenCalledWith("1A2B-3C4D"));
+    expect(await screen.findByRole("button", { name: "Kopyalandı" })).toBeTruthy();
+  });
 });

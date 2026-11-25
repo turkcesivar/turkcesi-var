@@ -9,6 +9,8 @@ export interface LisansBilgisi {
   kalan?: number;
   gunKalan?: number;
   bekleyenEk?: number;
+  /** Destekçi kodu (XXXX-XXXX): destek isterken söylenir, panelde bununla bulunur. */
+  kod?: string;
 }
 
 // hata: sunucunun döndürdüğü kod ya da ağ yoksa "cevrimdisi"

@@ -84,6 +84,7 @@ export const DENEME_DAVETI = "Sorun, öneri ve yeni oyunlar için Discord'a kat�
 export const ESLESTIRME_ACIKLAMA_SON = "Ödemen gelince canlı çeviri bu bilgisayarda kendiliğinden açılır.";
 export const DENEME_DESTEK_ACIKLAMA =
   "Denemeyi beğendiysen destekçi olarak devam edebilirsin: aylık 75 ₺ ile ayda 20.000, aylık 200 ₺ ile 50.000 yeni satır. Ödemen gelince bu bilgisayar kendiliğinden destekçi lisansına geçer; denemenin kalan günlerini beklemen gerekmez.";
+export const KOD_ACIKLAMA = "Destek ya da bir sorun için Discord'da bu kodu yaz; seni hemen buluruz.";
 export const ODEME_ACILDI =
   "Ödeme sayfası tarayıcında açıldı. Ödemen gelince canlı çeviri bu bilgisayarda birkaç saniye içinde kendiliğinden açılır; bir şey yazman gerekmez. Sayfayı kapattıysan seviyeyi yeniden seç.";
 export const DENEME_HAK_BITTI =

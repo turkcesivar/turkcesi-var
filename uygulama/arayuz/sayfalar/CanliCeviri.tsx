@@ -7,7 +7,7 @@ import { Bildirim, Dugme, Iskelet, sayi } from "../bilesenler/temel.js";
 import { useYumusakKapat } from "../bilesenler/yumusak.js";
 import {
   DENEME_DAVETI, DENEME_KARTI, DIL_ACIKLAMA, DIL_ADIMLAR, DIL_BASLIK, DIL_GELISMIS, DIL_GEREKLI_IPUCU, DIL_KOMUTU, DIL_WIN10,
-  CIHAZ_EKLE_ACIKLAMA, CIHAZ_EKLENDI, DENEME_DESTEK_ACIKLAMA, DENEME_HAK_BITTI, ODEME_ACILDI, ESLESTIRME_BASKA_BILGISAYAR, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
+  CIHAZ_EKLE_ACIKLAMA, CIHAZ_EKLENDI, DENEME_DESTEK_ACIKLAMA, DENEME_HAK_BITTI, KOD_ACIKLAMA, ODEME_ACILDI, ESLESTIRME_BASKA_BILGISAYAR, FARK, GUN_BITTI, HAK_BITTI, KAPANIS, NASIL_BASLIK, NEDEN_UCRETLI,
   SINIRLAR, SINIRLAR_BASLIK, SURE_BITTI, durumSatiri, hileEngel, kodMetni, paketliEngel,
 } from "../canli-metinler.js";
 import { DISCORD_ADRESI } from "../sabitler.js";
@@ -190,6 +190,28 @@ function DenemedenDestekci({
       {eslesme && <OdemeBekleniyor numara={eslesme.numara} />}
       <SeviyeSecimi isleniyor={isleniyor} sec={sec} ana={hakBitti} />
     </section>
+  );
+}
+
+/** Lisanslı ekranda kalıcı destekçi kodu: destek isterken söylenir, panelde bununla bulunur. */
+function DestekciKodu({ kod, deneme }: { kod: string; deneme: boolean }) {
+  const [kopyalandi, setKopyalandi] = useState(false);
+  return (
+    <div className="canli-kod">
+      <span>
+        {deneme ? "Kodun" : "Destekçi kodun"}: <strong className="kod-metin">{kod}</strong>
+      </span>
+      <button
+        type="button"
+        className="canli-kod-kopyala"
+        onClick={() => {
+          void navigator.clipboard?.writeText(kod).then(() => setKopyalandi(true), () => {});
+        }}
+      >
+        {kopyalandi ? "Kopyalandı" : "Kopyala"}
+      </button>
+      <span className="soluk">{KOD_ACIKLAMA}</span>
+    </div>
   );
 }
 
@@ -468,6 +490,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
             )}
           </div>
           <p className="soluk canli-durum">{durumSatiri(d.calisma, d.oyunAdi)}</p>
+          {l.kod && <DestekciKodu kod={l.kod} deneme={tur === "deneme"} />}
         </section>
         {d.engel && (
           <Bildirim tur={d.engel.tur === "paketli" ? "bilgi" : "uyari"}>
