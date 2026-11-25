@@ -69,6 +69,7 @@ describe("Canlı Çeviri sayfası", () => {
     render(<CanliCeviri onOyunaGit={vi.fn()} />);
     expect(await screen.findByText(/Her şey çevrilmez/)).toBeTruthy();
     expect(screen.getByText(/Bazı çeviriler kusurlu olabilir/)).toBeTruthy();
+    expect(screen.getByText(/ne kadar çok oynanırsa canlı çevirisi o kadar hızlanır/)).toBeTruthy();
     expect(screen.getByText("Canlı çeviri nasıl çalışır?")).toBeTruthy();
   });
 

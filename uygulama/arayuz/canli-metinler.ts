@@ -19,6 +19,7 @@ export const SINIRLAR = [
   "Her şey çevrilmez. Çok küçük, süslü, hareketli ya da resmin içine gömülü yazılar okunamayabilir.",
   "Bazı çeviriler kusurlu olabilir. Yazı yanlış okunursa çeviri de bozuk ya da anlamsız çıkabilir; bağlamı bilinmeyen kısa satırlar yanlış anlaşılabilir.",
   "Türkçe, İngilizceden 1-2 saniye sonra gelir. Daha önce çevrilmiş satırlar anında görünür.",
+  "Bir oyun ne kadar çok oynanırsa canlı çevirisi o kadar hızlanır: çevrilen satırlar ortak belleğe kaydedilir ve o oyunu sonra oynayan herkese anında gelir. Çok oynanan oyunlarda satırların çoğu beklemeden görünür.",
   "Türkçe yazı oyunun yazı tipiyle değil, İngilizcenin üstüne konan bir kutuda görünür.",
   "Oyun pencereli tam ekranda olmalı ve altyazılar açık olmalı. İnternet bağlantısı gerekir.",
   "Windows'ta İngilizce dil paketi yüklü olmalı (ekrandaki İngilizce yazıyı Windows okur). Yoksa uygulama sana nasıl kuracağını gösterir.",
