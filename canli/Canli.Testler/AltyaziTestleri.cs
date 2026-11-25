@@ -35,6 +35,83 @@ namespace Canli.Testler
             Assert.Equal(KararTuru.Yok, d.Okundu("Collezoifo, we must go now.", _kutu).Tur);
         }
 
+        // Örnekler Metro Exodus tanı kaydından: aynı altyazının gürültülü okumaları.
+        [Fact]
+        public void gurultulu_okumalar_ayni_satir_sayilir()
+        {
+            var d = Yeni();
+            Assert.Equal(KararTuru.YeniSatir, d.Okundu("Did they get you? No? Good.", _kutu).Tur);
+            Assert.Equal(KararTuru.Yok, d.Okundu("Did thyrget you? NO? Good.", _kutu).Tur);
+            Assert.Equal(KararTuru.Yok, d.Okundu("Did they-get yoo No? Goodk.", _kutu).Tur);
+            Assert.Equal(KararTuru.Yok, d.Okundu("Did they get you? Nob", _kutu).Tur);
+            // Farklı ama benzer satırlar ayrı kalır.
+            Assert.Equal(KararTuru.YeniSatir, d.Okundu("Did they hurt you?", _kutu).Tur);
+            Assert.Equal(KararTuru.YeniSatir, d.Okundu("One more!", _kutu).Tur);
+            Assert.Equal(KararTuru.YeniSatir, d.Okundu("One down!", _kutu).Tur);
+        }
+
+        [Fact]
+        public void altyazi_kisa_kaybolup_donunce_yeniden_cevrilmez_turkcesi_gosterilir()
+        {
+            var d = Yeni();
+            d.Okundu("Did they get you? No? Good.", _kutu);
+            d.CeviriGeldi("Did they get you? No? Good.", "Sana bir şey oldu mu? Hayır mı? İyi.");
+            Assert.Equal(KararTuru.Bitti, d.Okundu("", _kutu).Tur);
+            _t += 1500;   // tutma süresi geçti, Türkçe kalktı
+            Assert.Null(d.Simdi().AnaMetin);
+            Assert.Equal(KararTuru.Yok, d.Okundu("Did they-get yoo No? Goodk.", _kutu).Tur);
+            Assert.Equal("Sana bir şey oldu mu? Hayır mı? İyi.", d.Simdi().AnaMetin);
+            // 4 sn'den sonra aynı satır yeniden görülürse yeni satır sayılır (yerel bellek karşılar).
+            d.Okundu("", _kutu);
+            _t += 5000;
+            Assert.Equal(KararTuru.YeniSatir, d.Okundu("Did they get you? No? Good.", _kutu).Tur);
+        }
+
+        [Fact]
+        public void gurultu_zinciri_son_okumalara_baglanir()
+        {
+            var d = Yeni();
+            Assert.Equal(KararTuru.YeniSatir, d.Okundu("Let's pick up the pace, now the whole area knows we're here!", _kutu).Tur);
+            _t += 200; Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up the pace, now the whole area knoW's we!re ere!", _kutu).Tur);
+            _t += 200; Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up-th pce, nowthe whole- area khows we're here!", _kutu).Tur);
+            _t += 200; Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up the pace, now the 'Whole area khowsswe're here!", _kutu).Tur);
+        }
+
+        [Fact]
+        public void yarim_okumadan_sonra_belirgin_uzun_okuma_bir_kez_yeniden_gonderilir()
+        {
+            var d = Yeni();
+            Assert.Equal(KararTuru.YeniSatir, d.Okundu("Let's now the whole area knows we're here!", _kutu).Tur);
+            var k = d.Okundu("Let's pick up the pace, now the whole area knows we're here!", _kutu);
+            Assert.Equal(KararTuru.YeniSatir, k.Tur);
+            Assert.Equal("Let's pick up the pace, now the whole area knows we're here!", k.Metin);
+            Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up the pace, now the whole area knows we're here! ", _kutu).Tur);
+            Assert.Equal(KararTuru.Yok, d.Okundu("Let's pick up-thé pace, nowthe whole- area khows we're here!", _kutu).Tur);
+        }
+
+        [Fact]
+        public void ayni_satirin_yeni_cevirisi_onceki_kutuya_itmez()
+        {
+            var d = Yeni();
+            d.Okundu("Let's now the whole area knows we're here!", _kutu);
+            d.CeviriGeldi("Let's now the whole area knows we're here!", "Artık bütün bölge burada olduğumuzu biliyor!");
+            _t += 300;
+            d.Okundu("Let's pick up the pace, now the whole area knows we're here!", _kutu);
+            d.CeviriGeldi("Let's pick up the pace, now the whole area knows we're here!", "Hızlanalım, artık bütün bölge burada olduğumuzu biliyor!");
+            var g = d.Simdi();
+            Assert.Equal("Hızlanalım, artık bütün bölge burada olduğumuzu biliyor!", g.AnaMetin);
+            Assert.Null(g.Onceki);
+        }
+
+        [Fact]
+        public void yerel_bellek_gurultulu_okumayi_bulur()
+        {
+            var d = Yeni();
+            d.YerelBellekYaz("Did they get you? No? Good.", "Sana bir şey oldu mu? Hayır mı? İyi.");
+            Assert.Equal("Sana bir şey oldu mu? Hayır mı? İyi.", d.YerelBellekBul("Did thyrget you? NO? Good."));
+            Assert.Null(d.YerelBellekBul("They probably heard us coming down from the roof."));
+        }
+
         [Fact]
         public void yeni_satir_yer_tutucu()
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Drawing;
 using System.Text.RegularExpressions;
 
@@ -35,6 +36,13 @@ namespace Canli.Mantik
     public sealed class AltyaziDurumu
     {
         public const double AyniSatirEsigi = 0.80;
+        /// <summary>Harf bazlı aynı satır eşiği: gürültülü okumalar (≈0,84+) aynı, benzer ama farklı cümleler
+        /// ("Did they get you?" / "Did they hurt you?" ≈0,79) ayrı kalır.</summary>
+        public const double AyniSatirHarfEsigi = 0.80;
+        /// <summary>Aynı satırın yeni okuması bu kat (ve en az 4 harf) uzunsa yarım okumanın tamamı sayılır, bir kez yeniden çevrilir.</summary>
+        public const double IyilesmeKati = 1.15;
+        /// <summary>Okuma, bu süre içinde görülen okumalardan birine benziyorsa o okumanın satırına bağlanır.</summary>
+        public const double YakinOkumaMs = 4000;
         public const double YerelBellekEsigi = 0.85;
         public const int YerelBellekEnFazla = 2000;
         public const double TutmaMs = 1200, YerTutucuMs = 10000, GecCeviriMs = 5000,
@@ -43,7 +51,9 @@ namespace Canli.Mantik
 
         private static readonly Regex IkiHarf = new Regex("[A-Za-z]{2}", RegexOptions.Compiled);
 
-        private sealed class Satir { public string En; public double Zaman; public Rectangle Kutu; }
+        private sealed class Satir { public string En; public double Zaman; public Rectangle Kutu; public bool Iyilesti; public string Tr; }
+        private sealed class Okuma { public string Metin; public double Zaman; public Satir Satir; }
+        private readonly List<Okuma> _okumalar = new List<Okuma>();   // son YakinOkumaMs içindeki okumalar
 
         private readonly Func<double> _simdi;
         private readonly List<Satir> _son = new List<Satir>();   // son satırlar (en eski başta)
@@ -57,6 +67,7 @@ namespace Canli.Mantik
         private string _onceki;
         private double _oncekiBitis;
         private string _sonTr;
+        private Satir _sonTrSatir;      // son gösterilen çevirinin satırı (aynı satırın yeni çevirisi öncekiye itmez)
         private double _sonTrZaman;
 
         private readonly Dictionary<string, string> _bellek = new Dictionary<string, string>();
@@ -93,10 +104,41 @@ namespace Canli.Mantik
                 return Karar.Bitti;
             }
 
-            if (_gecerli != null && Benzerlik.Oran(metin, _gecerli.En) >= AyniSatirEsigi) return Karar.Yok;
+            _okumalar.RemoveAll(o => simdi - o.Zaman > YakinOkumaMs);
+            if (_gecerli == null)
+            {
+                // Altyazı kısa süre kaybolup geri geldi (ya da gürültü yüzünden boş okundu): aynı satır yeniden
+                // çevrilmez; bilinen Türkçesi yeniden gösterilir.
+                var yakin = _okumalar.LastOrDefault(o => AyniOkuma(metin, o.Metin));
+                if (yakin != null)
+                {
+                    _gecerli = yakin.Satir;
+                    _okumalar.Add(new Okuma { Metin = metin, Zaman = simdi, Satir = yakin.Satir });
+                    if (yakin.Satir.Tr != null) AnaGoster(yakin.Satir.Tr, yakin.Satir.Kutu, simdi, yakin.Satir);
+                    return Karar.Yok;
+                }
+            }
+            if (_gecerli != null)
+            {
+                // Gürültülü okuma ya da kesik (eksik) okuma aynı satırdır.
+                bool ayni = Benzerlik.HarfOrani(metin, _gecerli.En) >= AyniSatirHarfEsigi || KismiOkuma(metin, _gecerli.En);
+                // Yarım okunan satırın tamamı (yeni okuma belirgin uzun ve eskisini içeriyor) bir kez yeniden çevrilir;
+                // gösterim değişmez.
+                if ((ayni || KismiOkuma(_gecerli.En, metin)) && !_gecerli.Iyilesti && Iyilesme(metin, _gecerli.En))
+                {
+                    _gecerli.Iyilesti = true;
+                    _gecerli.En = metin;
+                    return Karar.YeniSatir(metin, kutu);
+                }
+                if (ayni) { _okumalar.Add(new Okuma { Metin = metin, Zaman = simdi, Satir = _gecerli }); return Karar.Yok; }
+                // Geçerli satıra değil ama son okumalardan birine (aynı satırın başka bir gürültülü okumasına) benziyor.
+                var zincir = _okumalar.LastOrDefault(o => o.Satir == _gecerli && AyniOkuma(metin, o.Metin));
+                if (zincir != null) { _okumalar.Add(new Okuma { Metin = metin, Zaman = simdi, Satir = _gecerli }); return Karar.Yok; }
+            }
 
             var s = new Satir { En = metin, Zaman = simdi, Kutu = kutu };
             _gecerli = s;
+            _okumalar.Add(new Okuma { Metin = metin, Zaman = simdi, Satir = s });
             _son.Add(s);
             if (_son.Count > 20) _son.RemoveAt(0);
             _ana = YerTutucu; _anaTurkce = false; _anaKutu = kutu;
@@ -110,12 +152,18 @@ namespace Canli.Mantik
             double simdi = _simdi();
             tr = (tr ?? "").Trim();
             bool okunamaz = tr.StartsWith("###", StringComparison.Ordinal);
-            bool gecerliSatir = _gecerli != null && Benzerlik.Oran(en, _gecerli.En) >= AyniSatirEsigi;
+            bool gecerliSatir = _gecerli != null && Benzerlik.HarfOrani(en, _gecerli.En) >= AyniSatirHarfEsigi;
 
             if (gecerliSatir)
             {
-                if (okunamaz) { _ana = null; _anaTurkce = false; return; }
-                AnaGoster(tr, _gecerli.Kutu, simdi);
+                if (okunamaz)
+                {
+                    // Satırın zaten bir çevirisi gösteriliyorsa (iyileştirme denemesi okunamadıysa) o kalır.
+                    if (!(_anaTurkce && _sonTrSatir == _gecerli)) { _ana = null; _anaTurkce = false; }
+                    return;
+                }
+                _gecerli.Tr = tr;
+                AnaGoster(tr, _gecerli.Kutu, simdi, _gecerli);
                 return;
             }
             if (okunamaz || tr.Length == 0) return;
@@ -123,21 +171,43 @@ namespace Canli.Mantik
             // Geç gelen: satır artık değişti ya da bitti. Gecikme, satırın ilk görüldüğü andan ölçülür.
             Satir kaynak = null;
             for (int i = _son.Count - 1; i >= 0; i--)
-                if (Benzerlik.Oran(en, _son[i].En) >= AyniSatirEsigi) { kaynak = _son[i]; break; }
+                if (Benzerlik.HarfOrani(en, _son[i].En) >= AyniSatirHarfEsigi) { kaynak = _son[i]; break; }
             if (kaynak == null || simdi - kaynak.Zaman >= GecCeviriMs) return;
+            kaynak.Tr = tr;
 
             if (_gecerli != null) { _onceki = tr; _oncekiBitis = simdi + OncekiMs; }
-            else { AnaGoster(tr, kaynak.Kutu, simdi); _gizleZaman = simdi + GecAnaMs; }
+            else { AnaGoster(tr, kaynak.Kutu, simdi, kaynak); _gizleZaman = simdi + GecAnaMs; }
         }
 
-        private void AnaGoster(string tr, Rectangle kutu, double simdi)
+        private void AnaGoster(string tr, Rectangle kutu, double simdi, Satir satir)
         {
-            if (_sonTr != null && _sonTr != tr && simdi - _sonTrZaman < OncekiSayilirMs)
+            // Aynı satırın yeni çevirisi (yarım okumanın tamamı) eskisinin yerine geçer; soluk "önceki"ye itilmez.
+            if (_sonTr != null && _sonTr != tr && _sonTrSatir != satir && simdi - _sonTrZaman < OncekiSayilirMs)
             {
                 _onceki = _sonTr; _oncekiBitis = simdi + OncekiMs;
             }
             _ana = tr; _anaTurkce = true; _anaKutu = kutu;
-            _sonTr = tr; _sonTrZaman = simdi; _gizleZaman = 0;
+            _sonTr = tr; _sonTrSatir = satir; _sonTrZaman = simdi; _gizleZaman = 0;
+        }
+
+        /// <summary>Eski okumanın harfleri, yenisine (çoğunlukla) yalnız eklemeyle ulaşılıyor mu?</summary>
+        private static bool KismiOkuma(string eski, string yeni)
+        {
+            string e = Benzerlik.Harfler(eski), y = Benzerlik.Harfler(yeni);
+            if (e.Length == 0 || y.Length <= e.Length) return false;
+            int uzaklik = (int)Math.Round((1 - Benzerlik.Oran(e, y)) * y.Length);
+            return uzaklik - (y.Length - e.Length) <= Math.Max(2, (int)(0.15 * e.Length));
+        }
+
+        private static bool AyniOkuma(string a, string b)
+        {
+            return Benzerlik.HarfOrani(a, b) >= AyniSatirHarfEsigi || KismiOkuma(a, b) || KismiOkuma(b, a);
+        }
+
+        private static bool Iyilesme(string yeni, string eski)
+        {
+            int y = Benzerlik.Harfler(yeni).Length, e = Benzerlik.Harfler(eski).Length;
+            return y >= e * IyilesmeKati && y >= e + 4;
         }
 
         public GosterimDurumu Simdi()

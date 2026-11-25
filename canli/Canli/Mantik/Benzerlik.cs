@@ -5,6 +5,22 @@ namespace Canli.Mantik
     /// <summary>İki metnin benzerlik oranı (Levenshtein, büyük/küçük harfe duyarsız). 0..1.</summary>
     public static class Benzerlik
     {
+        /// <summary>
+        /// Yalnız harf ve rakamlar üzerinden benzerlik (noktalama ve boşluk OCR gürültüsünde en çok bozulan kısımdır):
+        /// "Did thyrget you? NO? Good." ile "Did they get you? No? Good." neredeyse aynı çıkar.
+        /// </summary>
+        public static double HarfOrani(string a, string b)
+        {
+            return Oran(Harfler(a), Harfler(b));
+        }
+
+        public static string Harfler(string s)
+        {
+            var sb = new System.Text.StringBuilder((s ?? "").Length);
+            foreach (char c in s ?? "") if (char.IsLetterOrDigit(c)) sb.Append(char.ToLowerInvariant(c));
+            return sb.ToString();
+        }
+
         public static double Oran(string a, string b)
         {
             a = (a ?? "").ToLowerInvariant();
