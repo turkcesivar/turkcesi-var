@@ -129,7 +129,7 @@ namespace Canli.Testler
         }
 
         [Fact]
-        public void otomatik_renk_en_cok_uc_renk_tutar_ve_disari_verir()
+        public void otomatik_renk_birden_cok_renk_ogrenir_ve_disari_verir()
         {
             double t = 0;
             var o = new OtomatikRenk(() => t);
@@ -138,10 +138,9 @@ namespace Canli.Testler
             for (int r = 0; r < renkler.Length; r++)
                 using (var b = Ornek(zeminler[r], renkler[r]))
                     for (int i = 0; i < 3; i++) { t += 2100; o.Ornekle(b, Kutular()); }
-            Assert.Equal(3, o.Renkler.Count);
+            Assert.Equal(Math.Min(renkler.Length, OtomatikRenk.EnCokRenk), o.Renkler.Count);
             var yeni = new OtomatikRenk(() => 0, o.Renkler);
-            Assert.Equal(3, yeni.Renkler.Count);
-            Assert.False(yeni.OrneklemeZamani() && yeni.Renkler.Count < 3);
+            Assert.Equal(o.Renkler.Count, yeni.Renkler.Count);
         }
 
         [Fact]
@@ -155,6 +154,36 @@ namespace Canli.Testler
                 {
                     Assert.True(Say(yalnizBeyaz) < 10);
                     Assert.True(Say(ikisi) > 1000);
+                }
+            }
+        }
+
+        [Fact]
+        public void zemin_lekesi_olan_ogrenilmis_renk_o_karede_atlanir()
+        {
+            // Metro: öğrenilmiş açık gri (ipucu yazısı) karlı zeminle aynı renk; zemin geniş gri lekelerden oluşur.
+            var gri = Color.FromArgb(199, 199, 199);
+            var turuncu = Color.FromArgb(255, 151, 0);
+            using (var b = new Bitmap(1100, 90))
+            {
+                using (var g = Graphics.FromImage(b))
+                {
+                    g.Clear(Color.FromArgb(60, 60, 70));
+                    using (var br = new SolidBrush(Color.FromArgb(205, 203, 200))) g.FillRectangle(br, 300, 0, 500, 90);  // kar lekesi
+                    using (var f = new Font("Arial", 30, FontStyle.Bold, GraphicsUnit.Pixel))
+                    using (var yb = new SolidBrush(turuncu))
+                    {
+                        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                        g.DrawString(Yazi, f, yb, 20, 25);
+                    }
+                }
+                long Say(Bitmap t, int x0, int x1) { long n = 0; for (int y = 0; y < t.Height; y++) for (int x = x0; x < x1; x++) if (t.GetPixel(x, y).R == 0) n++; return n; }
+                using (var t = RenkSuzgeci.TemizleRenkler(b, new[] { gri, turuncu }, out _, out _))
+                {
+                    // Kar lekesinin yazı olmayan üst şeridi (y 0-20) tamamen boş kalmalı; turuncu yazı tutulmalı.
+                    long ust = 0; for (int y = 0; y < 20; y++) for (int x = 300; x < 800; x++) if (t.GetPixel(x, y).R == 0) ust++;
+                    Assert.Equal(0, ust);
+                    Assert.True(Say(t, 0, 1100) > 1000);
                 }
             }
         }

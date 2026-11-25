@@ -129,7 +129,7 @@ namespace Canli.Goruntu
     public sealed class OtomatikRenk
     {
         public const double AralikMs = 2000;
-        public const int EnCokRenk = 3;
+        public const int EnCokRenk = 5;
         private const int AyniRenkPayi = 25;
 
         private readonly System.Func<double> _saat;
