@@ -292,7 +292,7 @@ function ipcKur() {
   ipcMain.handle("tv:surum", () => app.getVersion());
 
   ipcMain.handle("tv:canliDurum", async () => (await canliHazir()).durum());
-  ipcMain.handle("tv:canliYenile", async () => (await canliHazir()).yenile());
+  ipcMain.handle("tv:canliYenile", async (_e, sessiz: unknown) => (await canliHazir()).yenile(sessiz === true));
   ipcMain.handle("tv:canliDeneme", async () => (await canliHazir()).deneme());
   ipcMain.handle("tv:canliEslestir", async () => (await canliHazir()).eslestirBaslat());
   ipcMain.handle("tv:canliDestekOl", async (_e, seviye: unknown) => {

@@ -231,19 +231,25 @@ export class CanliYonetici {
     this.yay();
   }
 
-  /** Lisans durumunu sunucudan yeniler; süren bir yenileme varsa onun sözünü döndürür. */
-  yenile(): Promise<void> {
+  /**
+   * Lisans durumunu sunucudan yeniler; süren bir yenileme varsa onun sözünü döndürür.
+   * sessiz: ekran "yükleniyor"a dönmez (sayfa açılışında arka planda güncelleme).
+   */
+  yenile(sessiz = false): Promise<void> {
     if (this.yenileniyor) return this.yenileniyor;
-    const p = this.yenileIc().finally(() => {
+    const p = this.yenileIc(sessiz).finally(() => {
       if (this.yenileniyor === p) this.yenileniyor = null;
     });
     this.yenileniyor = p;
     return p;
   }
 
-  private async yenileIc(): Promise<void> {
-    this.d.yukleniyor = true;
-    this.yay();
+  private async yenileIc(sessiz = false): Promise<void> {
+    // Sessiz yenileme yalnız bir lisans bilgisi zaten varken anlamlıdır; yoksa iskelet gösterilir.
+    if (!sessiz || !this.d.lisans) {
+      this.d.yukleniyor = true;
+      this.yay();
+    }
     try {
       let e = this.d.eslesme ?? this.eslesmeOku();
       if (e && e.bitis <= Date.now()) {

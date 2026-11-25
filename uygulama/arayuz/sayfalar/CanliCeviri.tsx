@@ -254,6 +254,7 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
   const [denemeKartiKapali, setDenemeKartiKapali] = useState(false);
   const canli = useRef(true);
 
+  /** Durumu okur; başarılıysa true. */
   const yukle = useCallback(async () => {
     try {
       const x = await window.tv.canliDurum();
@@ -261,14 +262,18 @@ export function CanliCeviri({ onOyunaGit }: { onOyunaGit: (kimlik: string) => vo
         setCihazHatasi(false);
         setD(x);
       }
+      return true;
     } catch {
       if (canli.current) setCihazHatasi(true);
+      return false;
     }
   }, []);
 
   useEffect(() => {
     canli.current = true;
-    void yukle();
+    // Sayfa açılınca lisans sunucudan sessizce yenilenir (panelden eklenen hak, başka cihazda yapılan ödeme görünsün).
+    // İlk okuma başarısızsa yapılmaz (cihaz hatası ekranda kalsın; "Yeniden dene" var).
+    void yukle().then((tamam) => (tamam && canli.current ? window.tv.canliYenile(true).then(yukle) : undefined)).catch(() => {});
     const birak = window.tv.canliDinle((x) => {
       setCihazHatasi(false);
       setD(x);

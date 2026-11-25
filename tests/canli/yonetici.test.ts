@@ -118,6 +118,17 @@ afterEach(() => {
 });
 
 describe("CanliYonetici", () => {
+  it("sessiz_yenileme_lisans_varken_yukleniyor_gostermez", async () => {
+    const { y } = kur();
+    await y.yenile();
+    const goruler: boolean[] = [];
+    y.dinle((d) => goruler.push(!!d.yukleniyor));
+    await y.yenile(true);
+    expect(goruler.every((v) => v === false)).toBe(true);
+    await y.yenile();
+    expect(goruler).toContain(true);
+  });
+
   it("destek_ol_baglantiyi_doner_numarayi_eslesme_olarak_yoklar", async () => {
     const { y, depo, sunucu } = kur();
     expect(await y.destekOl("destekci")).toEqual({ url: "https://kreosus.com/pay/x" });

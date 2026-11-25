@@ -47,7 +47,7 @@ const tv: TvApi = {
     canliDinleyicileri.add(f);
     return () => canliDinleyicileri.delete(f);
   },
-  canliYenile: () => ipcRenderer.invoke("tv:canliYenile"),
+  canliYenile: (sessiz?: boolean) => ipcRenderer.invoke("tv:canliYenile", sessiz === true),
   canliDeneme: () => ipcRenderer.invoke("tv:canliDeneme"),
   canliEslestir: () => ipcRenderer.invoke("tv:canliEslestir"),
   canliCihazEkle: (numara: string) => ipcRenderer.invoke("tv:canliCihazEkle", numara),

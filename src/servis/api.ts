@@ -58,7 +58,7 @@ export interface TvApi {
   surum(): Promise<string>;
   canliDurum(): Promise<CanliDurum>;
   canliDinle(f: (d: CanliDurum) => void): () => void;
-  canliYenile(): Promise<void>;
+  canliYenile(sessiz?: boolean): Promise<void>;
   canliDeneme(): Promise<{ hata?: string }>;
   canliEslestir(): Promise<{ hata?: string }>;
   canliBaslat(): Promise<void>;

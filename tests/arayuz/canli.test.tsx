@@ -34,9 +34,13 @@ describe("Canlı Çeviri sayfası", () => {
     const tv = kur({ ...taban, lisans: { durum: "etkin", tur: "destekci", kalan: 100, gunKalan: 50 } });
     render(<CanliCeviri onOyunaGit={vi.fn()} />);
     const dugme = await screen.findByRole("button", { name: /Yenile/ });
+    // Sayfa açılışında lisans sessizce yenilenir.
+    await waitFor(() => expect(tv.canliYenile).toHaveBeenCalledWith(true));
     tv.canliDurum.mockClear();
+    tv.canliYenile.mockClear();
     fireEvent.click(dugme);
     await waitFor(() => expect(tv.canliYenile).toHaveBeenCalledTimes(1));
+    expect(tv.canliYenile).not.toHaveBeenCalledWith(true);
     expect(tv.canliDilDenetle).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(tv.canliDurum).toHaveBeenCalled());
   });
