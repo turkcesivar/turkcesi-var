@@ -33,6 +33,10 @@ import {
 const burasi = dirname(fileURLToPath(import.meta.url));
 const KLASOR = uygulamaKlasoru();
 const GORSEL = "tv-gorsel";
+/** Yalnız geliştirmede: yerel deneme sunucusu (ör. http://localhost:8787) ve onun taklit ödeme sayfası. */
+const YEREL_SUNUCU = !app.isPackaged && process.env.TV_CANLI_SUNUCU ? process.env.TV_CANLI_SUNUCU : undefined;
+const odemeAdresiUygun = (url: string) =>
+  url.startsWith("https://kreosus.com/") || (YEREL_SUNUCU !== undefined && url.startsWith("http://127.0.0.1:8799/"));
 /** Kreosus ödeme bağlantısı kapalıyken açılan genel destek sayfası (arayüzdeki DESTEK_ADRESI ile aynı). */
 const KREOSUS_SAYFASI = "https://kreosus.com/turkcesivar";
 const gelistirme = !app.isPackaged;
@@ -58,7 +62,7 @@ let canliYonetici: CanliYonetici | undefined;
 function canliKur(): Promise<CanliYonetici> {
   return makineGuidOku().then((guid) => {
     const y = new CanliYonetici({
-      sunucu: new CanliSunucu({ taban: "https://api.turkcesivar.com", cihaz: cihazOzeti(guid) }),
+      sunucu: new CanliSunucu({ taban: YEREL_SUNUCU ?? "https://api.turkcesivar.com", cihaz: cihazOzeti(guid) }),
       depo: new LisansDeposu(join(KLASOR, "canli-lisans.json"), gercekSifreleyici(safeStorage)),
       baslat: () => canliSurecBaslat(canliExeYolu(gelistirme, app.getAppPath(), process.resourcesPath)),
       ocrDenetle: () => ocrDenetle(() => canliSurecBaslat(canliExeYolu(gelistirme, app.getAppPath(), process.resourcesPath))),
@@ -303,7 +307,7 @@ function ipcKur() {
     }
     if (r.hata) return { hata: r.hata };
     // Yalnız Kreosus'un kendi adresi açılır (sunucu yanıtı da denetlenir).
-    if (r.url && r.url.startsWith("https://kreosus.com/")) void shell.openExternal(r.url);
+    if (r.url && odemeAdresiUygun(r.url)) void shell.openExternal(r.url);
     return {};
   });
   ipcMain.handle("tv:canliCihazEkle", async (_e, numara: unknown) => {
