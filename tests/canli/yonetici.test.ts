@@ -81,6 +81,7 @@ interface KurSecenekleri {
   acik?: () => boolean;
   testOyunu?: string;
   ocr?: () => Promise<boolean | null>;
+  tani?: boolean;
 }
 
 function kur(o: KurSecenekleri = {}) {
@@ -97,6 +98,7 @@ function kur(o: KurSecenekleri = {}) {
     surecAcikMi: acik,
     testOyunu: o.testOyunu,
     ocrDenetle: o.ocr,
+    tani: o.tani,
   });
   return { y, surec, depo, sunucu, acik, baslat };
 }
@@ -260,6 +262,14 @@ describe("CanliYonetici", () => {
     expect(k.surec.komutlar().some((c) => c.komut === "basla")).toBe(false);
     expect(k.y.durum().engel?.tur).toBe("hile");
     expect(k.y.durum().engel?.oyunAdi).toBe("Hileli");
+  });
+
+  it("tani_secenegi_basla_komutuna_eklenir", async () => {
+    const k = kur({ oyunlar: [oyun(STEAM, { appId: 123, platform: "steam", ad: "Oyun X" })], tani: true });
+    await k.y.yenile();
+    k.y.calistir();
+    k.surec.olay({ olay: "onplan", yol: STEAM + "\\x.exe" });
+    expect(k.surec.komutlar().find((c) => c.komut === "basla")?.tani).toBe(true);
   });
 
   it("desteklenmeyen_oyunda_basla_surecAdi_ile", async () => {

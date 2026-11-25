@@ -34,6 +34,8 @@ export interface YoneticiSecenekleri {
   testOyunu?: string;
   /** İngilizce metin tanıma denetimi (true/false; null: anlaşılamadı). */
   ocrDenetle?: () => Promise<boolean | null>;
+  /** Yalnız geliştirmede (TV_CANLI_TANI): canli.exe ölçüm kaydı tutar (%LOCALAPPDATA%\TurkcesiVar\canli\tani). */
+  tani?: boolean;
 }
 
 const YOKLAMA_MS = 5000;
@@ -604,6 +606,7 @@ export class CanliYonetici {
       oyunAdi: oyun.ad,
       profil: null,
       sureciAdi,
+      ...(this.o.tani ? { tani: true } : {}),
     });
     this.oturum = { sureciAdi, yol, oyunAdi: oyun.ad, ...(oyun.kimlik ? { kimlik: oyun.kimlik } : {}) };
     this.oturumHatasi = null;

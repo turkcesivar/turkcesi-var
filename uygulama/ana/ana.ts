@@ -63,6 +63,7 @@ function canliKur(): Promise<CanliYonetici> {
       oyunlar: () => sonListe,
       surecAcikMi: surecAcikMiAsenkron,
       ...(!app.isPackaged && process.env.TV_CANLI_TEST_OYUNU ? { testOyunu: process.env.TV_CANLI_TEST_OYUNU } : {}),
+      ...(!app.isPackaged && process.env.TV_CANLI_TANI ? { tani: true } : {}),
     });
     canliYonetici = y;
     // Açılışta lisans durumu hemen istenir (diskte bekleyen eşleştirme numarası da yoklanmaya başlar).
