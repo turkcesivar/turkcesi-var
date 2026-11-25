@@ -63,6 +63,10 @@ export interface TvApi {
   canliEslestir(): Promise<{ hata?: string }>;
   canliBaslat(): Promise<void>;
   canliDurdur(): Promise<void>;
+  /** Windows'ta İngilizce metin tanımayı yeniden denetler (sonuç canliDinle ile gelir). */
+  canliDilDenetle(): Promise<void>;
+  /** Windows dil ayarlarını açar. */
+  canliDilAyarlari(): Promise<void>;
 }
 
 /** tv:cagir ile çağrılabilen servis yöntemleri (beyaz liste). */

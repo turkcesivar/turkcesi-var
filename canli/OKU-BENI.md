@@ -34,7 +34,7 @@ Komut satırından deneme: `canli.exe --lisans K --oyun ID --oyunAdi AD [--renk 
 ## Önceden indirilen bellek
 
 `basladi`dan sonra oyunun ortak belleği arka planda iner (`GET /bellek/<oyun>`, lisanslı): önce disk önbelleği
-`%LOCALAPPDATA%\TurkcesiVar\canliellek\` (anında), sonra sunucu (yalnız sürüm değiştiyse gövde gelir). Altyazı ve
+`%LOCALAPPDATA%\TurkcesiVar\canli\bellek\` (anında), sonra sunucu (yalnız sürüm değiştiyse gövde gelir). Altyazı ve
 menü satırları sunucuya gitmeden önce bu bellekte aranır (sadeleştirilmiş tam eşleşme, yoksa üçlü harf dizininden
 seçilen ≤ 40 aday arasında ≥ 0,85 benzerlik; "AD: metin" önekli satırlar adsız da aranır). İnmezse çeviri sunucudan sürer.
 
