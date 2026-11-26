@@ -140,7 +140,7 @@ herkese ücretsiz pakete dönüşür.
 - **Kayıtlarına dokunmaz.** Oyun kayıtların Steam'in kendi klasöründedir; Türkçe kurup
   kaldırmak onları etkilemez.
 - **Açık kaynak.** Uygulamanın ne yaptığını bu depoda satır satır görebilirsin.
-- **Virüs taraması temiz.** 0.6.2 kurulum dosyası [VirusTotal'da 0/67](https://www.virustotal.com/gui/file/706b2d51d194b08ff33dd06626072e4ba3e32f411f00c2899a462d6ebeaa475f): hiçbir antivirüs işaretlemedi.
+- **Virüs taraması temiz.** 0.6.3 kurulum dosyası [VirusTotal'da 0/66](https://www.virustotal.com/gui/file/f030ed94c64cbb0084d0eba4a09d994c8159a3a05d0a25551e7f6fe90ba560bf): hiçbir antivirüs işaretlemedi.
 
 ## Güncellemeler
 
